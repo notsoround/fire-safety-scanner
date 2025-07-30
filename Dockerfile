@@ -15,7 +15,7 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Frontend build stage
-FROM node:18-alpine as frontend-builder
+FROM node:20-alpine as frontend-builder
 
 WORKDIR /app/frontend
 
