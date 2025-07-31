@@ -100,29 +100,31 @@ const App = () => {
   };
 
   const handleLogin = async () => {
-    // For local development, directly authenticate with mock session
     try {
-      const formData = new FormData();
-      formData.append('session_id', 'local-dev-session-' + Date.now());
+      setLoading(true);
       
-      const response = await fetch(`${backendUrl}/api/auth/session`, {
+      const response = await fetch(`${backendUrl}/api/auth/demo-login`, {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Local auth successful:', data);
+        console.log('Demo auth successful:', data);
         localStorage.setItem('session_token', data.session_token);
         setUser(data.user);
         setCurrentPage('dashboard');
-        setLoading(false);
       } else {
-        console.error('Local auth failed');
-        setLoading(false);
+        const error = await response.json();
+        console.error('Demo auth failed:', error);
+        alert('Authentication failed. Please try again.');
       }
     } catch (error) {
-      console.error('Local auth error:', error);
+      console.error('Demo authentication failed:', error);
+      alert('Authentication failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -162,36 +164,6 @@ const App = () => {
       }
     } else {
       console.log('No session ID found in hash:', hash);
-    }
-  };
-
-  const handleLogin = async () => {
-    try {
-      setLoading(true);
-      
-      const response = await fetch(`${backendUrl}/api/auth/demo-login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Demo auth successful:', data);
-        localStorage.setItem('session_token', data.session_token);
-        setUser(data.user);
-        setCurrentPage('dashboard');
-      } else {
-        const error = await response.json();
-        console.error('Demo auth failed:', error);
-        alert('Authentication failed. Please try again.');
-      }
-    } catch (error) {
-      console.error('Demo authentication failed:', error);
-      alert('Authentication failed. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
