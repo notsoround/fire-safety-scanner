@@ -12,7 +12,8 @@ import requests
 import asyncio
 from datetime import datetime, timedelta
 import litellm
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+# Commented out emergentintegrations imports for deployment
+# from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from dotenv import load_dotenv
 
 load_dotenv()
