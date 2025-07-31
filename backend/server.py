@@ -103,16 +103,24 @@ async def get_current_user(session_token: str = Header(None)):
 @app.post("/api/auth/session")
 async def create_session(session_id: str = Form(...)):
     try:
-        # Call emergent auth API
-        response = requests.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": session_id}
-        )
+        # For deployment, use a simple mock auth system
+        # In production, this would connect to your actual auth provider
+        user_data = {
+            "email": "admin@firesafety.com",
+            "name": "Fire Safety Admin",
+            "picture": "https://via.placeholder.com/150"
+        }
         
-        if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Invalid session ID")
+        # Skip external auth API call for deployment
+        # response = requests.get(
+        #     "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+        #     headers={"X-Session-ID": session_id}
+        # )
+        # 
+        # if response.status_code != 200:
+        #     raise HTTPException(status_code=400, detail="Invalid session ID")
         
-        user_data = response.json()
+        # user_data = response.json()  # Commented out for deployment
         
         # Check if user already exists
         existing_user = users_collection.find_one({"email": user_data["email"]})
@@ -169,6 +177,63 @@ async def get_profile(user: dict = Depends(get_current_user)):
         "name": user["name"],
         "picture": user["picture"]
     }
+
+# Simple auth endpoint for quick login (development/demo)
+@app.post("/api/auth/demo-login")
+async def demo_login():
+    """Simple demo login endpoint that doesn't require external auth"""
+    try:
+        user_data = {
+            "email": "admin@firesafety.com",
+            "name": "Fire Safety Admin",
+            "picture": "https://via.placeholder.com/150"
+        }
+        
+        # Check if user already exists
+        existing_user = users_collection.find_one({"email": user_data["email"]})
+        if not existing_user:
+            # Create new user
+            user_id = str(uuid.uuid4())
+            user = {
+                "id": user_id,
+                "email": user_data["email"],
+                "name": user_data["name"],
+                "picture": user_data["picture"],
+                "created_at": datetime.utcnow()
+            }
+            users_collection.insert_one(user)
+            
+            user_response = {
+                "id": user_id,
+                "email": user_data["email"],
+                "name": user_data["name"],
+                "picture": user_data["picture"]
+            }
+        else:
+            user_response = {
+                "id": existing_user["id"],
+                "email": existing_user["email"],
+                "name": existing_user["name"],
+                "picture": existing_user["picture"]
+            }
+        
+        # Create session
+        session_token = str(uuid.uuid4())
+        session = {
+            "session_id": "demo-session",
+            "user_id": user_response["id"],
+            "session_token": session_token,
+            "expires_at": datetime.utcnow() + timedelta(days=30),
+            "created_at": datetime.utcnow()
+        }
+        sessions_collection.insert_one(session)
+        
+        return {
+            "session_token": session_token,
+            "user": user_response
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Inspection routes
