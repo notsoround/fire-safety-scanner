@@ -165,6 +165,36 @@ const App = () => {
     }
   };
 
+  const handleLogin = async () => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`${backendUrl}/api/auth/demo-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Demo auth successful:', data);
+        localStorage.setItem('session_token', data.session_token);
+        setUser(data.user);
+        setCurrentPage('dashboard');
+      } else {
+        const error = await response.json();
+        console.error('Demo auth failed:', error);
+        alert('Authentication failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Demo authentication failed:', error);
+      alert('Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
