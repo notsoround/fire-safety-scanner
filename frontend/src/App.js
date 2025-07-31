@@ -269,8 +269,19 @@ const App = () => {
     // Parse the gemini_response to get structured data
     let parsedData = {};
     try {
-      parsedData = JSON.parse(inspection.gemini_response);
+      // The response contains mixed text and JSON, extract just the JSON part
+      const response = inspection.gemini_response;
+      
+      // Look for JSON content between ```json and ``` markers
+      const jsonMatch = response.match(/```json\s*\n([\s\S]*?)\n```/);
+      if (jsonMatch && jsonMatch[1]) {
+        parsedData = JSON.parse(jsonMatch[1].trim());
+      } else {
+        // Try to parse the entire response as JSON (fallback)
+        parsedData = JSON.parse(response);
+      }
     } catch (e) {
+      console.log('Could not parse gemini response:', e);
       // If it's not JSON, create empty structure
       parsedData = {};
     }
@@ -695,7 +706,19 @@ const App = () => {
                           <div className="bg-black/20 rounded-lg p-3 text-white/80 text-sm max-h-48 overflow-y-auto">
                             {(() => {
                               try {
-                                const parsed = JSON.parse(inspection.gemini_response);
+                                // Parse the gemini_response to extract JSON data
+                                let parsed = {};
+                                const response = inspection.gemini_response;
+                                
+                                // Look for JSON content between ```json and ``` markers
+                                const jsonMatch = response.match(/```json\s*\n([\s\S]*?)\n```/);
+                                if (jsonMatch && jsonMatch[1]) {
+                                  parsed = JSON.parse(jsonMatch[1].trim());
+                                } else {
+                                  // Try to parse the entire response as JSON (fallback)
+                                  parsed = JSON.parse(response);
+                                }
+                                
                                 return (
                                   <div className="space-y-2">
                                     {parsed.last_inspection_date && <div><strong>Last Inspection:</strong> {parsed.last_inspection_date}</div>}
