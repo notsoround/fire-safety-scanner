@@ -595,6 +595,21 @@ const App = () => {
                     
                     {editingInspection === inspection.id ? (
                       <div className="space-y-4">
+                        {/* Reference Image */}
+                        <div className="mb-4">
+                          <label className="block text-white font-semibold mb-2">Reference Image:</label>
+                          <div className="flex justify-center">
+                            <img 
+                              src={inspection.image_base64} 
+                              alt="Inspection reference"
+                              className="max-w-sm max-h-64 object-contain rounded-lg border border-white/20 cursor-pointer hover:opacity-80 transition-opacity duration-300"
+                              onClick={() => setModalImage(inspection.image_base64)}
+                              title="Click to view full size"
+                            />
+                          </div>
+                          <p className="text-white/60 text-sm text-center mt-2">Click image to view full size</p>
+                        </div>
+                        
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-white font-semibold mb-2">Location:</label>
