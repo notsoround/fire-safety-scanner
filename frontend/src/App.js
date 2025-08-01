@@ -180,13 +180,47 @@ const App = () => {
 
   const openCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      videoRef.current.srcObject = stream;
-      videoRef.current.play();
-      setIsCameraOpen(true);
+      // Check if camera is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Camera access is not supported by this browser. Please try uploading a file instead.');
+        return;
+      }
+
+      // Request camera access with mobile-friendly constraints
+      const constraints = {
+        video: {
+          facingMode: 'environment', // Use back camera on mobile
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        setIsCameraOpen(true);
+      }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      alert('Unable to access camera. Please try uploading a file instead.');
+      
+      let errorMessage = 'Unable to access camera. ';
+      
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage += 'Please allow camera permission in your browser settings and try again.';
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        errorMessage += 'No camera found on this device.';
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage += 'Camera access is not supported by this browser.';
+      } else if (error.name === 'NotReadableError') {
+        errorMessage += 'Camera is already in use by another application.';
+      } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        errorMessage += 'Camera access requires HTTPS. Please use a secure connection.';
+      } else {
+        errorMessage += 'Please try uploading a file instead.';
+      }
+      
+      alert(errorMessage);
     }
   };
 
