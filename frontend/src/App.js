@@ -243,7 +243,8 @@ const App = () => {
 
     try {
       const sessionToken = localStorage.getItem('session_token');
-      // Send the complete data URL so backend can detect format
+      const imageBase64 = selectedImage.split(',')[1]; // Remove data URL prefix
+      
       const response = await fetch(`${backendUrl}/api/inspections`, {
         method: 'POST',
         headers: {
@@ -251,7 +252,7 @@ const App = () => {
           'session-token': sessionToken
         },
         body: JSON.stringify({
-          image_data_url: selectedImage,
+          image_base64: imageBase64,
           location: location,
           notes: notes
         })

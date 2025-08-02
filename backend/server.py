@@ -58,7 +58,7 @@ class Session(BaseModel):
     expires_at: datetime
 
 class InspectionRequest(BaseModel):
-    image_data_url: str
+    image_base64: str
     location: str
     notes: Optional[str] = None
 
@@ -253,10 +253,26 @@ async def create_inspection(
 ):
     
     try:
-        # Extract base64 content from data URL
-        data_url = inspection_request.image_data_url
-        if not data_url.startswith('data:image/'):
-            raise HTTPException(status_code=400, detail="Invalid image data URL format")
+        # Detect image format from base64 content and create proper data URL
+        image_base64 = inspection_request.image_base64
+        
+        # Try to detect image format from base64 header
+        image_format = "jpeg"  # default
+        try:
+            import base64
+            decoded = base64.b64decode(image_base64[:50])  # decode first few bytes to check format
+            if decoded.startswith(b'\x89PNG'):
+                image_format = "png"
+            elif decoded.startswith(b'GIF'):
+                image_format = "gif"
+            elif decoded.startswith(b'\xff\xd8\xff'):
+                image_format = "jpeg"
+            elif decoded.startswith(b'RIFF') and b'WEBP' in decoded[:20]:
+                image_format = "webp"
+        except:
+            pass  # keep default jpeg
+        
+        data_url = f"data:image/{image_format};base64,{image_base64}"
         
         # Use litellm directly with OpenRouter
         response = await litellm.acompletion(
@@ -305,8 +321,7 @@ async def create_inspection(
         
         gemini_response = response.choices[0].message.content
         
-        # Extract base64 content for storage (remove data URL prefix)
-        image_base64 = data_url.split(',')[1] if ',' in data_url else data_url
+        # Use the original base64 content for storage
         
         # Create inspection record
         inspection_id = str(uuid.uuid4())
