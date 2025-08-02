@@ -21,6 +21,7 @@ const App = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+  console.log('Frontend build timestamp: 2025-08-02-05:07 - Backend URL:', backendUrl);
 
   useEffect(() => {
     checkSession();
