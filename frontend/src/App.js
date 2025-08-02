@@ -36,27 +36,16 @@ const App = () => {
 
   const checkSession = async () => {
     try {
-      const sessionToken = localStorage.getItem('session_token');
-      if (!sessionToken) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${backendUrl}/api/auth/profile`, {
-        headers: {
-          'session-token': sessionToken
-        }
+      // Skip session check and automatically set demo user
+      setUser({
+        id: "demo-user",
+        email: "admin@firesafety.com",
+        name: "Fire Safety Admin",
+        picture: "https://via.placeholder.com/150"
       });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      } else {
-        localStorage.removeItem('session_token');
-      }
+      localStorage.setItem('session_token', 'demo-session-token');
     } catch (error) {
       console.error('Session check failed:', error);
-      localStorage.removeItem('session_token');
     } finally {
       setLoading(false);
     }
@@ -254,8 +243,7 @@ const App = () => {
 
     try {
       const sessionToken = localStorage.getItem('session_token');
-      const imageBase64 = selectedImage.split(',')[1]; // Remove data URL prefix
-      
+      // Send the complete data URL so backend can detect format
       const response = await fetch(`${backendUrl}/api/inspections`, {
         method: 'POST',
         headers: {
@@ -263,7 +251,7 @@ const App = () => {
           'session-token': sessionToken
         },
         body: JSON.stringify({
-          image_base64: imageBase64,
+          image_data_url: selectedImage,
           location: location,
           notes: notes
         })
@@ -382,19 +370,21 @@ const App = () => {
     );
   }
 
+  // Bypass authentication for now - automatically set mock user
+  if (!user && !loading) {
+    setUser({
+      id: "demo-user",
+      email: "admin@firesafety.com",
+      name: "Fire Safety Admin",
+      picture: "https://via.placeholder.com/150"
+    });
+    localStorage.setItem('session_token', 'demo-session-token');
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white/10 backdrop-blur-md rounded-xl p-8 text-center border border-white/20">
-          <h1 className="text-3xl font-bold text-white mb-6">Fire Safety Scanner</h1>
-          <p className="text-white/80 mb-8">Advanced fire extinguisher inspection powered by AI</p>
-          <button
-            onClick={handleLogin}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
-          >
-            Sign In to Continue
-          </button>
-        </div>
+        <div className="text-white text-xl">Loading Fire Safety Scanner...</div>
       </div>
     );
   }
