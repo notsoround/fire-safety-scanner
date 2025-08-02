@@ -17,6 +17,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Frontend build stage
 FROM node:20-alpine as frontend-builder
 
+# Accept build arguments
+ARG REACT_APP_BACKEND_URL=https://scanner.hales.ai
+ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
+
 WORKDIR /app/frontend
 
 # Copy frontend package files
@@ -28,7 +32,7 @@ RUN yarn install --frozen-lockfile
 # Copy frontend source code
 COPY frontend/ .
 
-# Build the frontend
+# Build the frontend with environment variable
 RUN yarn build
 
 # Production stage

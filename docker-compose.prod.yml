@@ -2,7 +2,10 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build: 
+      context: .
+      args:
+        - REACT_APP_BACKEND_URL=https://scanner.hales.ai
     ports:
       - "8080:80"
       - "8443:443"
