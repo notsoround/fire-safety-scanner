@@ -15,6 +15,7 @@ services:
     restart: always
     volumes:
       - ./docker/nginx-ssl.conf:/etc/nginx/sites-available/default
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
   mongo:
     image: mongo:6.0
