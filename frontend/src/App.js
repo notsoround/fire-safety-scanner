@@ -85,6 +85,7 @@ const App = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched inspections:', JSON.stringify(data, null, 2));
         setInspections(data);
       }
     } catch (error) {

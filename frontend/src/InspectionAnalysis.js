@@ -1,6 +1,7 @@
 import React from 'react';
 
 const InspectionAnalysis = ({ geminiResponse }) => {
+  console.log('geminiResponse prop:', JSON.stringify(geminiResponse, null, 2));
 
   const formatDate = (dateValue) => {
     if (!dateValue) return 'N/A';
