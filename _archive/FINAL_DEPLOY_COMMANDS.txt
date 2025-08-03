@@ -1,0 +1,50 @@
+# 🔥 FINAL DEPLOYMENT COMMANDS FOR FIRE SAFETY SCANNER FIX
+# Copy and paste these commands one by one on your DigitalOcean server
+
+# 1. SSH into your server (run this on your local machine)
+ssh root@134.199.239.171
+
+# 2. Navigate to project directory (run these on the server)
+cd ~/projects/fire-safety-scanner
+
+# 3. Check current status
+echo "Current docker-compose.prod.yml nginx config:"
+grep "nginx.*conf" docker-compose.prod.yml
+
+# 4. Backup current config
+cp docker-compose.prod.yml docker-compose.prod.yml.backup
+echo "✅ Backup created"
+
+# 5. Fix the nginx configuration (this is the key fix!)
+sed -i 's|./docker/nginx-ssl.conf:/etc/nginx/sites-available/default|./docker/nginx.conf:/etc/nginx/sites-available/default|g' docker-compose.prod.yml
+
+# 6. Verify the fix
+echo "Fixed nginx config:"
+grep "nginx.*conf" docker-compose.prod.yml
+
+# 7. Stop existing containers
+docker-compose -f docker-compose.prod.yml down
+
+# 8. Rebuild and start with fixed config
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# 9. Wait for services to start
+sleep 30
+
+# 10. Test the fix
+echo "🧪 Testing container (should return 200, not 301):"
+curl -I http://localhost:8080/ | head -1
+
+echo "🧪 Testing backend API:"
+curl -s http://localhost:8001/api/health
+
+echo "🧪 Testing via system nginx:"
+curl -I https://scanner.hales.ai/ | head -1
+
+# 11. Check running containers
+docker ps
+
+echo ""
+echo "🎉 DEPLOYMENT COMPLETE!"
+echo "✅ Test your website: https://scanner.hales.ai/"
+echo "✅ Should now load without redirect loop!"

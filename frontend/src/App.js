@@ -20,12 +20,32 @@ const App = () => {
   const canvasRef = useRef(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || window.location.origin;
-  console.log('Frontend build timestamp: 2025-08-02-05:07 - Backend URL:', backendUrl);
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
   useEffect(() => {
     checkSession();
   }, []);
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return '';
+    if (typeof dateValue === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+            return dateValue;
+        }
+        const d = new Date(dateValue);
+        if (!isNaN(d.getTime())) {
+            return d.toISOString().split('T')[0];
+        }
+        return dateValue;
+    }
+    if (typeof dateValue === 'object' && dateValue !== null) {
+      const { year, month, day } = dateValue;
+      if (year && month && day) {
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
+    }
+    return '';
+  };
 
   useEffect(() => {
     if (user) {
@@ -289,38 +309,37 @@ const App = () => {
 
   const startEditingInspection = (inspection) => {
     setEditingInspection(inspection.id);
-    
-    // Parse the gemini_response to get structured data
+
     let parsedData = {};
     try {
-      // The response contains mixed text and JSON, extract just the JSON part
-      const response = inspection.gemini_response;
-      
-      // Look for JSON content between ```json and ``` markers
-      const jsonMatch = response.match(/```json\s*\n([\s\S]*?)\n```/);
-      if (jsonMatch && jsonMatch[1]) {
-        parsedData = JSON.parse(jsonMatch[1].trim());
-      } else {
-        // Try to parse the entire response as JSON (fallback)
-        parsedData = JSON.parse(response);
-      }
+        const responseText = typeof inspection.gemini_response === 'string'
+            ? inspection.gemini_response
+            : JSON.stringify(inspection.gemini_response);
+
+        const jsonMatch = responseText.match(/```json\s*(\{[\s\S]*?\})\s*```|(\{[\s\S]*\})/);
+
+        if (jsonMatch) {
+            const jsonString = jsonMatch[1] || jsonMatch[2];
+            parsedData = JSON.parse(jsonString);
+        } else {
+            parsedData = {};
+        }
     } catch (e) {
-      console.log('Could not parse gemini response:', e);
-      // If it's not JSON, create empty structure
-      parsedData = {};
+        console.error('Could not parse gemini response:', e);
+        parsedData = {};
     }
-    
+
     setEditFormData({
-      location: inspection.location || '',
-      notes: inspection.notes || '',
-      last_inspection_date: parsedData.last_inspection_date || '',
-      next_due_date: parsedData.next_due_date || '',
-      extinguisher_type: parsedData.extinguisher_type || '',
-      maintenance_notes: parsedData.maintenance_notes || '',
-      condition: parsedData.condition || '',
-      requires_attention: parsedData.requires_attention || false
+        location: inspection.location || '',
+        notes: inspection.notes || '',
+        last_inspection_date: formatDate(parsedData.last_inspection_date),
+        next_due_date: formatDate(parsedData.next_due_date),
+        extinguisher_type: parsedData.extinguisher_type || '',
+        maintenance_notes: parsedData.maintenance_notes || '',
+        condition: parsedData.condition || '',
+        requires_attention: parsedData.requires_attention || false,
     });
-  };
+};
 
   const cancelEditing = () => {
     setEditingInspection(null);
@@ -397,7 +416,7 @@ const App = () => {
       <div 
         className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-20"
         style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1660165458059-57cfb6cc87e5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHxmdXR1cmlzdGljJTIwdGVjaG5vbG9neXxlbnwwfHx8Ymx1ZXwxNzUyODc2MjYzfDA&ixlib=rb-4.1.0&q=85)'
+          backgroundImage: 'url(https://drive.google.com/file/d/1aK1ki_S_CFoXpSSXZmHJTFrgxPS_QBQG/view?usp=sharing)'
         }}
       />
       
@@ -564,8 +583,8 @@ const App = () => {
                 <div className="bg-black/20 rounded-lg p-4 text-white/80">
                   {typeof inspectionResult.analysis === 'object' ? (
                     <div className="space-y-2 text-sm">
-                      {inspectionResult.analysis.last_inspection_date && <div><strong>Last Inspection:</strong> {inspectionResult.analysis.last_inspection_date}</div>}
-                      {inspectionResult.analysis.next_due_date && <div><strong>Next Due:</strong> {inspectionResult.analysis.next_due_date}</div>}
+                      {inspectionResult.analysis.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(inspectionResult.analysis.last_inspection_date)}</div>}
+                      {inspectionResult.analysis.next_due_date && <div><strong>Next Due:</strong> {formatDate(inspectionResult.analysis.next_due_date)}</div>}
                       {inspectionResult.analysis.extinguisher_type && <div><strong>Type:</strong> {inspectionResult.analysis.extinguisher_type}</div>}
                       {inspectionResult.analysis.condition && <div><strong>Condition:</strong> {inspectionResult.analysis.condition}</div>}
                       {inspectionResult.analysis.maintenance_notes && <div><strong>Notes:</strong> {inspectionResult.analysis.maintenance_notes}</div>}
@@ -746,35 +765,40 @@ const App = () => {
                           <h4 className="text-white font-semibold mb-2">Analysis:</h4>
                           <div className="bg-black/20 rounded-lg p-3 text-white/80 text-sm max-h-48 overflow-y-auto">
                             {(() => {
-                              try {
-                                // Parse the gemini_response to extract JSON data
-                                let parsed = {};
-                                const response = inspection.gemini_response;
-                                
-                                // Look for JSON content between ```json and ``` markers
-                                const jsonMatch = response.match(/```json\s*\n([\s\S]*?)\n```/);
-                                if (jsonMatch && jsonMatch[1]) {
-                                  parsed = JSON.parse(jsonMatch[1].trim());
-                                } else {
-                                  // Try to parse the entire response as JSON (fallback)
-                                  parsed = JSON.parse(response);
-                                }
-                                
-                                return (
-                                  <div className="space-y-2">
-                                    {parsed.last_inspection_date && <div><strong>Last Inspection:</strong> {parsed.last_inspection_date}</div>}
-                                    {parsed.next_due_date && <div><strong>Next Due:</strong> {parsed.next_due_date}</div>}
-                                    {parsed.extinguisher_type && <div><strong>Type:</strong> {parsed.extinguisher_type}</div>}
-                                    {parsed.condition && <div><strong>Condition:</strong> {parsed.condition}</div>}
-                                    {parsed.maintenance_notes && <div><strong>Notes:</strong> {parsed.maintenance_notes}</div>}
-                                    {parsed.requires_attention !== undefined && (
-                                      <div><strong>Requires Attention:</strong> {parsed.requires_attention ? 'Yes' : 'No'}</div>
-                                    )}
-                                  </div>
-                                );
-                              } catch (e) {
-                                return <pre className="whitespace-pre-wrap">{inspection.gemini_response}</pre>;
+                              let parsed = {};
+                              const geminiResponse = inspection.gemini_response;
+
+                              if (typeof geminiResponse === 'object' && geminiResponse !== null) {
+                                  parsed = geminiResponse;
+                              } else if (typeof geminiResponse === 'string') {
+                                  try {
+                                      // Robust regex to find JSON within optional markdown
+                                      const jsonMatch = geminiResponse.match(/```json\s*(\{[\s\S]*?\})\s*```|(\{[\s\S]*\})/);
+                                      if (jsonMatch) {
+                                          const jsonString = jsonMatch[1] || jsonMatch[2];
+                                          parsed = JSON.parse(jsonString);
+                                      } else {
+                                          // Fallback for plain JSON string
+                                          parsed = JSON.parse(geminiResponse);
+                                      }
+                                  } catch (e) {
+                                      // If parsing fails, render the raw string safely
+                                      return <pre className="whitespace-pre-wrap">{geminiResponse}</pre>;
+                                  }
                               }
+
+                              return (
+                                  <div className="space-y-2">
+                                      {parsed.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(parsed.last_inspection_date)}</div>}
+                                      {parsed.next_due_date && <div><strong>Next Due:</strong> {formatDate(parsed.next_due_date)}</div>}
+                                      {parsed.extinguisher_type && <div><strong>Type:</strong> {parsed.extinguisher_type}</div>}
+                                      {parsed.condition && <div><strong>Condition:</strong> {parsed.condition}</div>}
+                                      {parsed.maintenance_notes && <div><strong>Notes:</strong> {parsed.maintenance_notes}</div>}
+                                      {parsed.requires_attention !== undefined && (
+                                          <div><strong>Requires Attention:</strong> {parsed.requires_attention ? 'Yes' : 'No'}</div>
+                                      )}
+                                  </div>
+                              );
                             })()}
                           </div>
                         </div>

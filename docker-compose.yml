@@ -2,15 +2,15 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
     ports:
       - "8080:80"
       - "8001:8001"
-    environment:
-      - MONGO_URL=mongodb://mongo:27017
-      - DB_NAME=fire_safety_db
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+    env_file:
+      - .env
     depends_on:
       - mongo
     restart: unless-stopped

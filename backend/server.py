@@ -73,9 +73,15 @@ class InspectionResult(BaseModel):
     gemini_response: str
     notes: Optional[str] = None
 
+class InspectionDateUpdate(BaseModel):
+    year: Optional[int] = None
+    month: Optional[int] = None
+    day: Optional[int] = None
+    extracted_text: Optional[str] = None
+
 class InspectionUpdate(BaseModel):
-    last_inspection_date: Optional[str] = None
-    next_due_date: Optional[str] = None
+    last_inspection_date: Optional[InspectionDateUpdate] = None
+    next_due_date: Optional[InspectionDateUpdate] = None
     extinguisher_type: Optional[str] = None
     maintenance_notes: Optional[str] = None
     condition: Optional[str] = None
@@ -84,6 +90,133 @@ class InspectionUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+# AI Analysis Helper Functions
+async def analyze_image_layer(prompt: str, data_url: str) -> str:
+    """Generic helper to call the AI model with a specific prompt and image."""
+    try:
+        response = await litellm.acompletion(
+            model="openrouter/google/gemini-2.5-pro",
+            api_key=OPENROUTER_API_KEY,
+            api_base="https://openrouter.ai/api/v1",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a specialized AI assistant. Analyze the user's request based on the provided image and text, and return a concise, one-word or short-phrase answer."
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": { "url": data_url }
+                        }
+                    ]
+                }
+            ]
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        # In case of API error, return a marker
+        return "error"
+
+async def extract_raw_text(data_url: str) -> str:
+    """Layer 1: Performs OCR to get all visible text."""
+    prompt = "Perform OCR on this image and return only the raw text. Do not add any commentary."
+    return await analyze_image_layer(prompt, data_url)
+
+async def analyze_year(raw_text: str, data_url: str) -> str:
+    """Layer 2a: Analyzes and extracts the inspection year."""
+    prompt = f"From the following text and image, find the punched or written YEAR for the last inspection. Text: '{raw_text}'. Respond with only the year (e.g., '2024')."
+    return await analyze_image_layer(prompt, data_url)
+
+async def analyze_month(raw_text: str, data_url: str) -> str:
+    """Layer 2b: Analyzes and extracts the inspection month."""
+    prompt = f"From the following text and image, find the punched or written MONTH for the last inspection. Text: '{raw_text}'. Respond with only the month number (e.g., '8' for August)."
+    return await analyze_image_layer(prompt, data_url)
+
+async def analyze_day(raw_text: str, data_url: str) -> str:
+    """Layer 2c: Analyzes and extracts the inspection day."""
+    prompt = f"From the following text and image, find the punched or written DAY for the last inspection. Text: '{raw_text}'. Respond with only the day number."
+    return await analyze_image_layer(prompt, data_url)
+
+async def analyze_extinguisher_type(raw_text: str, data_url: str) -> str:
+    """Layer 3a: Analyzes and extracts the extinguisher type."""
+    prompt = f"From the text, what is the extinguisher type (e.g., ABC, CO2, Class K)? Text: '{raw_text}'. Respond with only the type."
+    return await analyze_image_layer(prompt, data_url)
+
+async def analyze_condition(raw_text: str, data_url: str) -> str:
+    """Layer 3b: Analyzes and assesses the extinguisher condition."""
+    prompt = f"From the text, assess the condition (Good, Fair, Poor). Text: '{raw_text}'. Respond with only the condition."
+    return await analyze_image_layer(prompt, data_url)
+
+def consolidate_analysis(
+    year: str, month: str, day: str,
+    extinguisher_type: str, condition: str,
+    raw_text: str
+) -> dict:
+    """Layer 4: Consolidates results into the final JSON object."""
+    # Basic date parsing
+    try:
+        year_int = int(year) if year.isdigit() else None
+    except (ValueError, TypeError):
+        year_int = None
+    
+    try:
+        month_int = int(month) if month.isdigit() else None
+    except (ValueError, TypeError):
+        month_int = None
+        
+    try:
+        day_int = int(day) if day.isdigit() else None
+    except (ValueError, TypeError):
+        day_int = None
+
+    # Calculate next due date (simple +1 year logic)
+    next_due_date_obj = None
+    if year_int and month_int and day_int:
+        try:
+            last_date = datetime(year_int, month_int, day_int)
+            # Due date is one year from the last inspection
+            next_due_date = last_date.replace(year=last_date.year + 1)
+            next_due_date_obj = {
+                "year": next_due_date.year,
+                "month": next_due_date.month,
+                "day": next_due_date.day,
+                "extracted_text": f"Calculated as 1 year after {year}-{month}-{day}"
+            }
+        except ValueError:
+            next_due_date_obj = None
+
+    # Determine `requires_attention`
+    requires_attention = (
+        condition.lower() == "poor" or
+        any(keyword in raw_text.lower() for keyword in ["recharge", "service", "replace", "fail"])
+    )
+
+    # Calculate confidence score (simple heuristic)
+    fields = [year, month, day, extinguisher_type, condition]
+    valid_fields = sum(1 for f in fields if f and f != "error" and f.lower() != 'null' and f.lower() != 'n/a')
+    confidence_score = valid_fields / len(fields)
+
+    # Assemble final JSON
+    final_json = {
+        "last_inspection_date": {
+            "year": year_int,
+            "month": month_int,
+            "day": day_int,
+            "extracted_text": f"Year: {year}, Month: {month}, Day: {day}"
+        },
+        "next_due_date": next_due_date_obj,
+        "extinguisher_type": extinguisher_type,
+        "condition": condition,
+        "requires_attention": requires_attention,
+        "maintenance_notes": "", # Placeholder, can be a separate analysis layer if needed
+        "confidence_score": round(confidence_score, 2),
+        "raw_text_analysis": raw_text
+    }
+    return final_json
+    
 # Authentication helper
 async def get_current_user(session_token: str = Header(None)):
     if not session_token:
@@ -256,11 +389,9 @@ async def create_inspection(
         # Detect image format from base64 content and create proper data URL
         image_base64 = inspection_request.image_base64
         
-        # Try to detect image format from base64 header
         image_format = "jpeg"  # default
         try:
-            import base64
-            decoded = base64.b64decode(image_base64[:50])  # decode first few bytes to check format
+            decoded = base64.b64decode(image_base64[:50])
             if decoded.startswith(b'\x89PNG'):
                 image_format = "png"
             elif decoded.startswith(b'GIF'):
@@ -269,67 +400,47 @@ async def create_inspection(
                 image_format = "jpeg"
             elif decoded.startswith(b'RIFF') and b'WEBP' in decoded[:20]:
                 image_format = "webp"
-        except:
-            pass  # keep default jpeg
+        except Exception:
+            pass
         
         data_url = f"data:image/{image_format};base64,{image_base64}"
-        
-        # Use litellm directly with OpenRouter
-        response = await litellm.acompletion(
-            model="openrouter/google/gemini-2.5-pro",
-            api_key=OPENROUTER_API_KEY,
-            api_base="https://openrouter.ai/api/v1",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are an expert fire safety inspector. Analyze fire extinguisher inspection tags and extract the following information:
-                    1. Last inspection date
-                    2. Next due date
-                    3. Type of fire extinguisher
-                    4. Any maintenance notes or issues
-                    5. Overall condition assessment
-                    
-                    Please provide the response in JSON format with these fields:
-                    {
-                        "last_inspection_date": "YYYY-MM-DD",
-                        "next_due_date": "YYYY-MM-DD", 
-                        "extinguisher_type": "string",
-                        "maintenance_notes": "string",
-                        "condition": "Good/Fair/Poor",
-                        "requires_attention": true/false
-                    }
-                    
-                    If any date information is unclear or missing, indicate this in your response."""
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Please analyze this fire extinguisher inspection tag and extract the required information."
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": data_url
-                            }
-                        }
-                    ]
-                }
-            ]
+
+        # --- START REFACTORED AI ANALYSIS ---
+        # Layer 1: OCR
+        raw_text = await extract_raw_text(data_url)
+
+        # Layer 2 & 3: Parallel Analysis
+        year_task = analyze_year(raw_text, data_url)
+        month_task = analyze_month(raw_text, data_url)
+        day_task = analyze_day(raw_text, data_url)
+        type_task = analyze_extinguisher_type(raw_text, data_url)
+        condition_task = analyze_condition(raw_text, data_url)
+
+        results = await asyncio.gather(
+            year_task, month_task, day_task, type_task, condition_task
+        )
+        year, month, day, extinguisher_type, condition = results
+
+        # Layer 4: Consolidation
+        final_analysis_json = consolidate_analysis(
+            year=year,
+            month=month,
+            day=day,
+            extinguisher_type=extinguisher_type,
+            condition=condition,
+            raw_text=raw_text
         )
         
-        gemini_response = response.choices[0].message.content
-        
-        # Use the original base64 content for storage
-        
+        gemini_response = json.dumps(final_analysis_json, indent=2)
+        # --- END REFACTORED AI ANALYSIS ---
+
         # Create inspection record
         inspection_id = str(uuid.uuid4())
         inspection = {
             "id": inspection_id,
             "user_id": user["id"],
             "location": inspection_request.location,
-            "image_base64": image_base64,
+            "image_base64": image_base64, # Storing original base64
             "inspection_date": datetime.utcnow(),
             "status": "analyzed",
             "gemini_response": gemini_response,
@@ -337,29 +448,36 @@ async def create_inspection(
             "created_at": datetime.utcnow()
         }
         
-        # Try to parse the response and extract due date
+        # Extract due date from the structured JSON for alerts
         try:
-            response_data = json.loads(gemini_response)
-            if "next_due_date" in response_data:
-                inspection["due_date"] = datetime.fromisoformat(response_data["next_due_date"])
-        except:
+            if final_analysis_json.get("next_due_date"):
+                due_date_info = final_analysis_json["next_due_date"]
+                if all(due_date_info.get(k) for k in ["year", "month", "day"]):
+                    inspection["due_date"] = datetime(
+                        due_date_info["year"],
+                        due_date_info["month"],
+                        due_date_info["day"]
+                    )
+        except (ValueError, TypeError):
             pass
         
         inspections_collection.insert_one(inspection)
         
-        # Send data to N8n webhook
+        # Send structured data to N8n webhook
         webhook_data = {
             "inspection_id": inspection_id,
             "user_id": user["id"],
             "location": inspection_request.location,
-            "analysis": gemini_response,
+            "analysis": final_analysis_json,
             "timestamp": datetime.utcnow().isoformat()
         }
         
-        requests.post(N8N_WEBHOOK_URL, json=webhook_data)
-        
-        
-        return {"inspection_id": inspection_id, "analysis": gemini_response}
+        try:
+            requests.post(N8N_WEBHOOK_URL, json=webhook_data)
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending webhook: {e}")
+
+        return {"inspection_id": inspection_id, "analysis": final_analysis_json}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -370,7 +488,6 @@ async def update_inspection(
     inspection_update: InspectionUpdate,
     user: dict = Depends(get_current_user)
 ):
-    # Find the inspection
     inspection = inspections_collection.find_one({
         "id": inspection_id,
         "user_id": user["id"]
@@ -379,41 +496,53 @@ async def update_inspection(
     if not inspection:
         raise HTTPException(status_code=404, detail="Inspection not found")
     
-    # Parse current gemini_response if it's JSON
-    current_data = {}
+    # Parse current gemini_response; it should always be valid JSON
     try:
         current_data = json.loads(inspection.get("gemini_response", "{}"))
-    except:
+    except json.JSONDecodeError:
+        # Fallback for corrupted data
         current_data = {}
     
-    # Update the fields
+    # Create the update object for MongoDB
     update_data = {}
-    if inspection_update.last_inspection_date is not None:
-        current_data["last_inspection_date"] = inspection_update.last_inspection_date
-    if inspection_update.next_due_date is not None:
-        current_data["next_due_date"] = inspection_update.next_due_date
+    update_payload = inspection_update.dict(exclude_unset=True)
+
+    # Directly update top-level fields
+    for field in ["extinguisher_type", "maintenance_notes", "condition", "requires_attention"]:
+        if field in update_payload:
+            current_data[field] = update_payload[field]
+            
+    # Handle nested date objects
+    if "last_inspection_date" in update_payload:
+        if "last_inspection_date" not in current_data:
+            current_data["last_inspection_date"] = {}
+        current_data["last_inspection_date"].update(update_payload["last_inspection_date"])
+
+    if "next_due_date" in update_payload:
+        if "next_due_date" not in current_data:
+            current_data["next_due_date"] = {}
+        current_data["next_due_date"].update(update_payload["next_due_date"])
+        
+        # Also update the top-level due_date for alerts
         try:
-            # Update the due_date field for alerts
-            update_data["due_date"] = datetime.fromisoformat(inspection_update.next_due_date)
-        except:
-            pass
-    if inspection_update.extinguisher_type is not None:
-        current_data["extinguisher_type"] = inspection_update.extinguisher_type
-    if inspection_update.maintenance_notes is not None:
-        current_data["maintenance_notes"] = inspection_update.maintenance_notes
-    if inspection_update.condition is not None:
-        current_data["condition"] = inspection_update.condition
-    if inspection_update.requires_attention is not None:
-        current_data["requires_attention"] = inspection_update.requires_attention
+            next_due_info = current_data["next_due_date"]
+            if all(next_due_info.get(k) for k in ["year", "month", "day"]):
+                update_data["due_date"] = datetime(
+                    next_due_info["year"],
+                    next_due_info["month"],
+                    next_due_info["day"]
+                )
+        except (ValueError, TypeError):
+            pass # Ignore if date is incomplete
+
+    # Update basic inspection fields
+    if "location" in update_payload:
+        update_data["location"] = update_payload["location"]
+    if "notes" in update_payload:
+        update_data["notes"] = update_payload["notes"]
     
-    # Update basic fields
-    if inspection_update.location is not None:
-        update_data["location"] = inspection_update.location
-    if inspection_update.notes is not None:
-        update_data["notes"] = inspection_update.notes
-    
-    # Update gemini_response with new data
-    update_data["gemini_response"] = json.dumps(current_data)
+    # Store the modified JSON back into gemini_response
+    update_data["gemini_response"] = json.dumps(current_data, indent=2)
     update_data["updated_at"] = datetime.utcnow()
     
     # Update in database
@@ -422,43 +551,50 @@ async def update_inspection(
         {"$set": update_data}
     )
     
+    if result.modified_count == 0 and not update_payload:
+         return {"message": "No changes provided"}
+
     if result.modified_count == 0:
-        raise HTTPException(status_code=400, detail="Failed to update inspection")
-    
+        # This can happen if the data is the same, but to be safe:
+        pass # Not necessarily an error
+
     return {"message": "Inspection updated successfully"}
+
+async def _get_mongo_inspections(query: dict):
+    """Helper to fetch and process inspections from MongoDB."""
+    inspections = list(inspections_collection.find(query))
+    
+    for item in inspections:
+        item["_id"] = str(item["_id"]) # Convert ObjectId
+        # Format datetime objects to ISO strings
+        for date_field in ["inspection_date", "due_date", "created_at", "updated_at"]:
+            if date_field in item and isinstance(item[date_field], datetime):
+                item[date_field] = item[date_field].isoformat()
+        
+        # Parse the gemini_response from a JSON string into a dictionary
+        if "gemini_response" in item:
+            try:
+                item["gemini_response"] = json.loads(item["gemini_response"])
+            except (json.JSONDecodeError, TypeError):
+                 # If parsing fails, return the raw string or a default error structure
+                item["gemini_response"] = {"error": "Could not parse AI analysis JSON."}
+
+    return inspections
 
 @app.get("/api/inspections")
 async def get_inspections(user: dict = Depends(get_current_user)):
-    inspections = list(inspections_collection.find({"user_id": user["id"]}))
-    
-    # Convert ObjectId to string and format dates
-    for inspection in inspections:
-        inspection["_id"] = str(inspection["_id"])
-        if "inspection_date" in inspection:
-            inspection["inspection_date"] = inspection["inspection_date"].isoformat()
-        if "due_date" in inspection:
-            inspection["due_date"] = inspection["due_date"].isoformat()
-    
-    return inspections
+    """Fetches all inspections for the current user."""
+    return await _get_mongo_inspections({"user_id": user["id"]})
 
 @app.get("/api/inspections/due")
 async def get_due_inspections(user: dict = Depends(get_current_user)):
-    # Find inspections that are due within the next 30 days
-    due_date = datetime.utcnow() + timedelta(days=30)
-    due_inspections = list(inspections_collection.find({
+    """Fetches inspections that are due within the next 30 days."""
+    due_date_threshold = datetime.utcnow() + timedelta(days=30)
+    query = {
         "user_id": user["id"],
-        "due_date": {"$lte": due_date}
-    }))
-    
-    # Format dates
-    for inspection in due_inspections:
-        inspection["_id"] = str(inspection["_id"])
-        if "inspection_date" in inspection:
-            inspection["inspection_date"] = inspection["inspection_date"].isoformat()
-        if "due_date" in inspection:
-            inspection["due_date"] = inspection["due_date"].isoformat()
-    
-    return due_inspections
+        "due_date": {"$lte": due_date_threshold}
+    }
+    return await _get_mongo_inspections(query)
 
 
 @app.get("/api/health")
