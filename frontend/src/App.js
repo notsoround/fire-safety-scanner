@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import InspectionAnalysis from './InspectionAnalysis';
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -581,20 +582,7 @@ const App = () => {
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
                 <h3 className="text-xl font-bold text-white mb-4">Analysis Result</h3>
                 <div className="bg-black/20 rounded-lg p-4 text-white/80">
-                  {typeof inspectionResult.analysis === 'object' ? (
-                    <div className="space-y-2 text-sm">
-                      {inspectionResult.analysis.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(inspectionResult.analysis.last_inspection_date)}</div>}
-                      {inspectionResult.analysis.next_due_date && <div><strong>Next Due:</strong> {formatDate(inspectionResult.analysis.next_due_date)}</div>}
-                      {inspectionResult.analysis.extinguisher_type && <div><strong>Type:</strong> {inspectionResult.analysis.extinguisher_type}</div>}
-                      {inspectionResult.analysis.condition && <div><strong>Condition:</strong> {inspectionResult.analysis.condition}</div>}
-                      {inspectionResult.analysis.maintenance_notes && <div><strong>Notes:</strong> {inspectionResult.analysis.maintenance_notes}</div>}
-                      {inspectionResult.analysis.requires_attention !== undefined && (
-                        <div><strong>Requires Attention:</strong> {inspectionResult.analysis.requires_attention ? 'Yes' : 'No'}</div>
-                      )}
-                    </div>
-                  ) : (
-                    <pre className="whitespace-pre-wrap text-sm">{inspectionResult.analysis}</pre>
-                  )}
+                  <InspectionAnalysis geminiResponse={inspectionResult.analysis} />
                 </div>
                 {inspectionResult.message && (
                   <div className="mt-4 text-sm text-green-400">
@@ -764,42 +752,7 @@ const App = () => {
                         <div>
                           <h4 className="text-white font-semibold mb-2">Analysis:</h4>
                           <div className="bg-black/20 rounded-lg p-3 text-white/80 text-sm max-h-48 overflow-y-auto">
-                            {(() => {
-                              let parsed = {};
-                              const geminiResponse = inspection.gemini_response;
-
-                              if (typeof geminiResponse === 'object' && geminiResponse !== null) {
-                                  parsed = geminiResponse;
-                              } else if (typeof geminiResponse === 'string') {
-                                  try {
-                                      // Robust regex to find JSON within optional markdown
-                                      const jsonMatch = geminiResponse.match(/```json\s*(\{[\s\S]*?\})\s*```|(\{[\s\S]*\})/);
-                                      if (jsonMatch) {
-                                          const jsonString = jsonMatch[1] || jsonMatch[2];
-                                          parsed = JSON.parse(jsonString);
-                                      } else {
-                                          // Fallback for plain JSON string
-                                          parsed = JSON.parse(geminiResponse);
-                                      }
-                                  } catch (e) {
-                                      // If parsing fails, render the raw string safely
-                                      return <pre className="whitespace-pre-wrap">{geminiResponse}</pre>;
-                                  }
-                              }
-
-                              return (
-                                  <div className="space-y-2">
-                                      {parsed.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(parsed.last_inspection_date)}</div>}
-                                      {parsed.next_due_date && <div><strong>Next Due:</strong> {formatDate(parsed.next_due_date)}</div>}
-                                      {parsed.extinguisher_type && <div><strong>Type:</strong> {parsed.extinguisher_type}</div>}
-                                      {parsed.condition && <div><strong>Condition:</strong> {parsed.condition}</div>}
-                                      {parsed.maintenance_notes && <div><strong>Notes:</strong> {parsed.maintenance_notes}</div>}
-                                      {parsed.requires_attention !== undefined && (
-                                          <div><strong>Requires Attention:</strong> {parsed.requires_attention ? 'Yes' : 'No'}</div>
-                                      )}
-                                  </div>
-                              );
-                            })()}
+                            <InspectionAnalysis geminiResponse={inspection.gemini_response} />
                           </div>
                         </div>
                       </div>
