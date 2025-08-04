@@ -24,6 +24,9 @@ This project follows a spec-driven development approach. The "truth" of the proj
 | :-------------------------------------- | :--------------------------------------------------------------------------------------- |
 | **`README.md`**                         | **(This File)** The high-level vision, strategy, and table of contents for the project.  |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md)      | **Single Source of Truth** for all deployment, operations, and troubleshooting procedures. |
+| [`ENVIRONMENT_MANAGEMENT_PLAN.md`](./ENVIRONMENT_MANAGEMENT_PLAN.md) | **Environment Setup** - Comprehensive plan for local/production environment management and API configuration. |
+| [`CAMERA_IMPLEMENTATION_STATUS.md`](./CAMERA_IMPLEMENTATION_STATUS.md) | **Current Feature Status** - Camera preview implementation progress and technical details. |
+| [`BUILD_LOG.md`](./BUILD_LOG.md)        | **Latest Build Log** - Deployment history, build metrics, and infrastructure status.    |
 | [`specs/ARCHITECTURE.md`](./specs/ARCHITECTURE.md) | The high-level system architecture diagrams and project file structure.                  |
 | [`specs/API_REFERENCE.md`](./specs/API_REFERENCE.md)  | Detailed specifications for the database schema and all API endpoints.                   |
 | [`specs/AI_MODEL.md`](./specs/AI_MODEL.md)          | *(Planned)* Requirements, prompts, and success criteria for the AI analysis model.      |

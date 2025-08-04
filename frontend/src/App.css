@@ -254,3 +254,58 @@
     width: 100%;
   }
 }
+.camera-preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.camera-preview-container {
+  position: relative;
+  width: 300px;
+  height: 500px;
+  background: #000;
+  border-radius: 6px;
+}
+
+.camera-preview-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  clip-path: polygon(0 4%, 4% 0, 96% 0, 100% 4%, 100% 100%, 0 100%);
+}
+
+.camera-preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; 
+}
+
+.camera-preview-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  clip-path: polygon(0 4%, 4% 0, 96% 0, 100% 4%, 100% 100%, 0 100%);
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 6px; 
+}
+
+.camera-preview-overlay::after {
+  content: '';
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  background-color: transparent;
+  border: 4px solid rgba(255, 0, 0, 0.8);
+  border-radius: 50%;
+}

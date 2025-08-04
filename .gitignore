@@ -1,11 +1,8 @@
 # Environment files
 .env
 .env.local
-.env.development
 .env.production
 .env.staging
-.env.test
-.env.prod
 
 # Dependencies
 node_modules/

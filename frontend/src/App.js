@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
+import CameraTest from './CameraTest';
+import FireExtinguisherCamera from './FireExtinguisherCamera';
 import './App.css';
-import InspectionAnalysis from './InspectionAnalysis';
 
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isTestingCamera, setIsTestingCamera] = useState(false);
+  const [isFireExtinguisherCameraOpen, setIsFireExtinguisherCameraOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedImage, setSelectedImage] = useState(null);
   const [location, setLocation] = useState('');
@@ -85,7 +88,6 @@ const App = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched inspections:', JSON.stringify(data, null, 2));
         setInspections(data);
       }
     } catch (error) {
@@ -190,48 +192,52 @@ const App = () => {
     }
   };
 
+  const closeCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => {
+        track.stop();
+      });
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraOpen(false);
+  };
+
   const openCamera = async () => {
     try {
-      // Check if camera is supported
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert('Camera access is not supported by this browser. Please try uploading a file instead.');
         return;
       }
-
-      // Request camera access with mobile-friendly constraints
+  
       const constraints = {
         video: {
-          facingMode: 'environment', // Use back camera on mobile
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setIsCameraOpen(true);
+        videoRef.current.onloadedmetadata = () => {
+          setIsCameraOpen(true);
+        };
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      
       let errorMessage = 'Unable to access camera. ';
-      
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         errorMessage += 'Please allow camera permission in your browser settings and try again.';
       } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
         errorMessage += 'No camera found on this device.';
-      } else if (error.name === 'NotSupportedError') {
-        errorMessage += 'Camera access is not supported by this browser.';
       } else if (error.name === 'NotReadableError') {
         errorMessage += 'Camera is already in use by another application.';
-      } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        errorMessage += 'Camera access requires HTTPS. Please use a secure connection.';
       } else {
-        errorMessage += 'Please try uploading a file instead.';
+        errorMessage += 'An unexpected error occurred.';
       }
-      
       alert(errorMessage);
     }
   };
@@ -239,20 +245,17 @@ const App = () => {
   const capturePhoto = () => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
+    if (!video || !canvas || !video.srcObject) return;
+    
     const context = canvas.getContext('2d');
     
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0);
+    context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
     
     const imageData = canvas.toDataURL('image/jpeg');
     setSelectedImage(imageData);
-    
-    // Stop camera
-    const stream = video.srcObject;
-    const tracks = stream.getTracks();
-    tracks.forEach(track => track.stop());
-    setIsCameraOpen(false);
+    closeCamera();
   };
 
   const analyzeImage = async () => {
@@ -418,7 +421,7 @@ const App = () => {
       <div 
         className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-20"
         style={{
-          backgroundImage: 'url(https://drive.google.com/file/d/1aK1ki_S_CFoXpSSXZmHJTFrgxPS_QBQG/view?usp=sharing)'
+          backgroundImage: 'none'
         }}
       />
       
@@ -506,7 +509,7 @@ const App = () => {
                     📁 Choose File
                   </button>
                   <button
-                    onClick={openCamera}
+                    onClick={() => setIsFireExtinguisherCameraOpen(true)}
                     className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105"
                   >
                     📷 Take Photo
@@ -521,28 +524,19 @@ const App = () => {
                   className="hidden"
                 />
 
-                {/* Camera Modal */}
-                {isCameraOpen && (
-                  <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
-                    <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-                      <video ref={videoRef} className="w-full max-w-md rounded-lg mb-4" autoPlay playsInline />
-                      <div className="flex space-x-4">
-                        <button
-                          onClick={capturePhoto}
-                          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-2 px-4 rounded-lg"
-                        >
-                          Capture
-                        </button>
-                        <button
-                          onClick={() => setIsCameraOpen(false)}
-                          className="flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded-lg"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                {/* Fire Extinguisher Camera Modal */}
+                {isFireExtinguisherCameraOpen && (
+                  <FireExtinguisherCamera
+                    onExit={() => setIsFireExtinguisherCameraOpen(false)}
+                    onCapture={(imageData) => {
+                      setSelectedImage(imageData);
+                      setIsFireExtinguisherCameraOpen(false);
+                    }}
+                  />
                 )}
+
+                {/* Camera Test Modal (for debugging) */}
+                {isTestingCamera && <CameraTest onExit={() => setIsTestingCamera(false)} />}
                 
                 <canvas ref={canvasRef} className="hidden" />
 
@@ -583,7 +577,20 @@ const App = () => {
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
                 <h3 className="text-xl font-bold text-white mb-4">Analysis Result</h3>
                 <div className="bg-black/20 rounded-lg p-4 text-white/80">
-                  <InspectionAnalysis geminiResponse={inspectionResult.analysis} />
+                  {typeof inspectionResult.analysis === 'object' ? (
+                    <div className="space-y-2 text-sm">
+                      {inspectionResult.analysis.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(inspectionResult.analysis.last_inspection_date)}</div>}
+                      {inspectionResult.analysis.next_due_date && <div><strong>Next Due:</strong> {formatDate(inspectionResult.analysis.next_due_date)}</div>}
+                      {inspectionResult.analysis.extinguisher_type && <div><strong>Type:</strong> {inspectionResult.analysis.extinguisher_type}</div>}
+                      {inspectionResult.analysis.condition && <div><strong>Condition:</strong> {inspectionResult.analysis.condition}</div>}
+                      {inspectionResult.analysis.maintenance_notes && <div><strong>Notes:</strong> {inspectionResult.analysis.maintenance_notes}</div>}
+                      {inspectionResult.analysis.requires_attention !== undefined && (
+                        <div><strong>Requires Attention:</strong> {inspectionResult.analysis.requires_attention ? 'Yes' : 'No'}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <pre className="whitespace-pre-wrap text-sm">{inspectionResult.analysis}</pre>
+                  )}
                 </div>
                 {inspectionResult.message && (
                   <div className="mt-4 text-sm text-green-400">
@@ -753,7 +760,42 @@ const App = () => {
                         <div>
                           <h4 className="text-white font-semibold mb-2">Analysis:</h4>
                           <div className="bg-black/20 rounded-lg p-3 text-white/80 text-sm max-h-48 overflow-y-auto">
-                            <InspectionAnalysis geminiResponse={inspection.gemini_response} />
+                            {(() => {
+                              let parsed = {};
+                              const geminiResponse = inspection.gemini_response;
+
+                              if (typeof geminiResponse === 'object' && geminiResponse !== null) {
+                                  parsed = geminiResponse;
+                              } else if (typeof geminiResponse === 'string') {
+                                  try {
+                                      // Robust regex to find JSON within optional markdown
+                                      const jsonMatch = geminiResponse.match(/```json\s*(\{[\s\S]*?\})\s*```|(\{[\s\S]*\})/);
+                                      if (jsonMatch) {
+                                          const jsonString = jsonMatch[1] || jsonMatch[2];
+                                          parsed = JSON.parse(jsonString);
+                                      } else {
+                                          // Fallback for plain JSON string
+                                          parsed = JSON.parse(geminiResponse);
+                                      }
+                                  } catch (e) {
+                                      // If parsing fails, render the raw string safely
+                                      return <pre className="whitespace-pre-wrap">{geminiResponse}</pre>;
+                                  }
+                              }
+
+                              return (
+                                  <div className="space-y-2">
+                                      {parsed.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(parsed.last_inspection_date)}</div>}
+                                      {parsed.next_due_date && <div><strong>Next Due:</strong> {formatDate(parsed.next_due_date)}</div>}
+                                      {parsed.extinguisher_type && <div><strong>Type:</strong> {parsed.extinguisher_type}</div>}
+                                      {parsed.condition && <div><strong>Condition:</strong> {parsed.condition}</div>}
+                                      {parsed.maintenance_notes && <div><strong>Notes:</strong> {parsed.maintenance_notes}</div>}
+                                      {parsed.requires_attention !== undefined && (
+                                          <div><strong>Requires Attention:</strong> {parsed.requires_attention ? 'Yes' : 'No'}</div>
+                                      )}
+                                  </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>
