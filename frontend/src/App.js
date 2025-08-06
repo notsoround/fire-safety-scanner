@@ -507,7 +507,6 @@ const App = () => {
                     e.target.src = "https://via.placeholder.com/150";
                   }}
                 />
-                <span className="text-white text-sm hidden lg:block">{user.name}</span>
                 <button
                   onClick={handleLogout}
                   className="text-white/70 hover:text-white transition-colors duration-300"
@@ -571,7 +570,6 @@ const App = () => {
                       e.target.src = "https://via.placeholder.com/150";
                     }}
                   />
-                  <span className="text-sm">{user.name}</span>
                 </div>
                 <button
                   onClick={() => {
@@ -675,49 +673,104 @@ const App = () => {
                 )}
 
                 <div className="space-y-4">
-                  {/* Location Multi-Select Dropdown */}
+                  {/* Location Multi-Select with Checkboxes */}
                   <div className="relative">
                     <label className="block text-white text-sm font-medium mb-2">
                       Location (Select multiple) *
                     </label>
-                    <select
-                      multiple
-                      value={selectedLocations}
-                      onChange={(e) => {
-                        const values = Array.from(e.target.selectedOptions, option => option.value);
-                        setSelectedLocations(values);
-                        setLocation(values.join(', '));
-                      }}
-                      className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px]"
-                      style={{
-                        backgroundImage: 'none',
-                        appearance: 'none'
-                      }}
-                    >
-                      <optgroup label="Floors" className="text-white bg-gray-800">
-                        <option value="Floor 1" className="text-white bg-gray-800 hover:bg-gray-700">Floor 1</option>
-                        <option value="Floor 2" className="text-white bg-gray-800 hover:bg-gray-700">Floor 2</option>
-                        <option value="Floor 3" className="text-white bg-gray-800 hover:bg-gray-700">Floor 3</option>
-                      </optgroup>
-                      <optgroup label="Areas" className="text-white bg-gray-800">
-                        <option value="Hallway" className="text-white bg-gray-800 hover:bg-gray-700">Hallway</option>
-                        <option value="Office Room" className="text-white bg-gray-800 hover:bg-gray-700">Office Room</option>
-                      </optgroup>
-                      <optgroup label="Directions" className="text-white bg-gray-800">
-                        <option value="North" className="text-white bg-gray-800 hover:bg-gray-700">North</option>
-                        <option value="South" className="text-white bg-gray-800 hover:bg-gray-700">South</option>
-                        <option value="East" className="text-white bg-gray-800 hover:bg-gray-700">East</option>
-                        <option value="West" className="text-white bg-gray-800 hover:bg-gray-700">West</option>
-                      </optgroup>
-                    </select>
+                    <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-4 max-h-48 overflow-y-auto">
+                      {/* Floors */}
+                      <div className="mb-4">
+                        <h4 className="text-white text-sm font-medium mb-2">Floors</h4>
+                        <div className="space-y-2">
+                          {['Floor 1', 'Floor 2', 'Floor 3'].map((floor) => (
+                            <label key={floor} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                value={floor}
+                                checked={selectedLocations.includes(floor)}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  let newSelections;
+                                  if (e.target.checked) {
+                                    newSelections = [...selectedLocations, value];
+                                  } else {
+                                    newSelections = selectedLocations.filter(loc => loc !== value);
+                                  }
+                                  setSelectedLocations(newSelections);
+                                  setLocation(newSelections.join(', '));
+                                }}
+                                className="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500 focus:ring-2"
+                              />
+                              <span className="text-white text-sm">{floor}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Areas */}
+                      <div className="mb-4">
+                        <h4 className="text-white text-sm font-medium mb-2">Areas</h4>
+                        <div className="space-y-2">
+                          {['Hallway', 'Office Room'].map((area) => (
+                            <label key={area} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                value={area}
+                                checked={selectedLocations.includes(area)}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  let newSelections;
+                                  if (e.target.checked) {
+                                    newSelections = [...selectedLocations, value];
+                                  } else {
+                                    newSelections = selectedLocations.filter(loc => loc !== value);
+                                  }
+                                  setSelectedLocations(newSelections);
+                                  setLocation(newSelections.join(', '));
+                                }}
+                                className="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500 focus:ring-2"
+                              />
+                              <span className="text-white text-sm">{area}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Directions */}
+                      <div>
+                        <h4 className="text-white text-sm font-medium mb-2">Directions</h4>
+                        <div className="space-y-2">
+                          {['North', 'South', 'East', 'West'].map((direction) => (
+                            <label key={direction} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                value={direction}
+                                checked={selectedLocations.includes(direction)}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  let newSelections;
+                                  if (e.target.checked) {
+                                    newSelections = [...selectedLocations, value];
+                                  } else {
+                                    newSelections = selectedLocations.filter(loc => loc !== value);
+                                  }
+                                  setSelectedLocations(newSelections);
+                                  setLocation(newSelections.join(', '));
+                                }}
+                                className="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500 focus:ring-2"
+                              />
+                              <span className="text-white text-sm">{direction}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                     {selectedLocations.length > 0 && (
                       <div className="mt-2 text-sm text-white/70">
                         Selected: {selectedLocations.join(', ')}
                       </div>
                     )}
-                    <div className="mt-1 text-xs text-white/50">
-                      Hold Ctrl (Cmd on Mac) to select multiple options
-                    </div>
                   </div>
                   <textarea
                     placeholder="Additional notes (optional)"
