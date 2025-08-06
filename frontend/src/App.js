@@ -11,6 +11,7 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedImage, setSelectedImage] = useState(null);
   const [location, setLocation] = useState('');
+  const [selectedLocations, setSelectedLocations] = useState([]);
   const [notes, setNotes] = useState('');
   const [inspectionResult, setInspectionResult] = useState(null);
   const [inspections, setInspections] = useState([]);
@@ -592,7 +593,8 @@ const App = () => {
 
         {currentPage === 'dashboard' && (
           <div className="space-y-8">
-            {/* User Stats */}
+            {/* User Stats - Commented out for future use */}
+            {/*
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
                 <h3 className="text-lg font-semibold text-white mb-2">Total Inspections</h3>
@@ -603,8 +605,10 @@ const App = () => {
                 <p className="text-3xl font-bold text-red-400">{dueInspections.length}</p>
               </div>
             </div>
+            */}
 
-            {/* Due Inspections Alert */}
+            {/* Due Inspections Alert - Commented out for future use */}
+            {/*
             {dueInspections.length > 0 && (
               <div className="bg-red-500/15 border border-red-500/50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">🚨 Inspections Due Soon</h3>
@@ -618,6 +622,7 @@ const App = () => {
                 </div>
               </div>
             )}
+            */}
 
             {/* Image Upload Section */}
             <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
@@ -670,13 +675,50 @@ const App = () => {
                 )}
 
                 <div className="space-y-4">
-                  <input
-                    type="text"
-                    placeholder="Location (e.g., Building A - 1st Floor)"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  {/* Location Multi-Select Dropdown */}
+                  <div className="relative">
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Location (Select multiple) *
+                    </label>
+                    <select
+                      multiple
+                      value={selectedLocations}
+                      onChange={(e) => {
+                        const values = Array.from(e.target.selectedOptions, option => option.value);
+                        setSelectedLocations(values);
+                        setLocation(values.join(', '));
+                      }}
+                      className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[120px]"
+                      style={{
+                        backgroundImage: 'none',
+                        appearance: 'none'
+                      }}
+                    >
+                      <optgroup label="Floors" className="text-white bg-gray-800">
+                        <option value="Floor 1" className="text-white bg-gray-800 hover:bg-gray-700">Floor 1</option>
+                        <option value="Floor 2" className="text-white bg-gray-800 hover:bg-gray-700">Floor 2</option>
+                        <option value="Floor 3" className="text-white bg-gray-800 hover:bg-gray-700">Floor 3</option>
+                      </optgroup>
+                      <optgroup label="Areas" className="text-white bg-gray-800">
+                        <option value="Hallway" className="text-white bg-gray-800 hover:bg-gray-700">Hallway</option>
+                        <option value="Office Room" className="text-white bg-gray-800 hover:bg-gray-700">Office Room</option>
+                      </optgroup>
+                      <optgroup label="Directions" className="text-white bg-gray-800">
+                        <option value="North" className="text-white bg-gray-800 hover:bg-gray-700">North</option>
+                        <option value="South" className="text-white bg-gray-800 hover:bg-gray-700">South</option>
+                        <option value="East" className="text-white bg-gray-800 hover:bg-gray-700">East</option>
+                        <option value="West" className="text-white bg-gray-800 hover:bg-gray-700">West</option>
+                      </optgroup>
+                    </select>
+                    {selectedLocations.length > 0 && (
+                      <div className="mt-2 text-sm text-white/70">
+                        Selected: {selectedLocations.join(', ')}
+                      </div>
+                    )}
+                    <div className="mt-1 text-xs text-white/50">
+                      Hold Ctrl (Cmd on Mac) to select multiple options
+                    </div>
+                  </div>
                   <textarea
                     placeholder="Additional notes (optional)"
                     value={notes}
@@ -686,10 +728,10 @@ const App = () => {
                   />
                   <button
                     onClick={analyzeImage}
-                    disabled={isAnalyzing || !selectedImage || !location.trim()}
+                    disabled={isAnalyzing || !selectedImage || selectedLocations.length === 0}
                     className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-3 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
-                    {isAnalyzing ? '🔍 Analyzing...' : '🔍 Analyze Image'}
+                    {isAnalyzing ? '🔍 Analyzing...' : '🔍 Analyze and Submit'}
                   </button>
                 </div>
               </div>
