@@ -54,7 +54,7 @@ Implement a camera preview feature shaped like a fire extinguisher inspection ta
 #### 6. **Build & Deployment**
 - **Frontend Build:** ✅ Complete (`npm run build` - Exit code: 0)
 - **Docker Rebuild:** ✅ Complete (`docker-compose up --build -d` - Success)
-- **Container Status:** ✅ Running (fire-safety-scanner-7-27-2025-app-1)
+- **Container Status:** ✅ Running (fire-safety-scanner-main-app-1)
 
 ## 🔧 TECHNICAL IMPLEMENTATION DETAILS
 
@@ -122,7 +122,7 @@ CameraTest.js
 ## 🏗️ INFRASTRUCTURE STATUS
 
 ### Docker Environment
-- **Container:** fire-safety-scanner-7-27-2025-app-1 ✅ Running
+- **Container:** fire-safety-scanner-main-app-1 ✅ Running
 - **Build Status:** ✅ Latest code deployed
 - **Frontend Build:** ✅ Production optimized
 

@@ -12,7 +12,7 @@
 
 #### 1. **Frontend Production Build** ✅
 ```bash
-cd /Users/halesai/VSC\ Projects/fire-safety-scanner-7-27-2025/frontend && npm run build
+cd /Users/halesai/VSC\ Projects/fire-safety-scanner-main/frontend && npm run build
 ```
 **Result:** 
 - Exit code: 0 (Success)
@@ -22,7 +22,7 @@ cd /Users/halesai/VSC\ Projects/fire-safety-scanner-7-27-2025/frontend && npm ru
 
 #### 2. **Docker Container Rebuild** ✅
 ```bash
-cd /Users/halesai/VSC\ Projects/fire-safety-scanner-7-27-2025 && docker-compose up --build -d
+cd /Users/halesai/VSC\ Projects/fire-safety-scanner-main && docker-compose up --build -d
 ```
 **Result:**
 - Build time: ~10.8s
@@ -80,15 +80,15 @@ clip-path: polygon(0 4%, 4% 0, 96% 0, 100% 4%, 100% 100%, 0 100%);
 ### 🚀 **DEPLOYMENT STATUS**
 
 #### **Container Infrastructure:**
-- **App Container:** `fire-safety-scanner-7-27-2025-app-1` ✅ Running
-- **MongoDB Container:** `fire-safety-scanner-7-27-2025-mongo-1` ✅ Running
+- **App Container:** `fire-safety-scanner-main-app-1` ✅ Running
+- **MongoDB Container:** `fire-safety-scanner-main-mongo-1` ✅ Running
 - **Network:** Docker Compose network ✅ Active
 - **Ports:** 80 (HTTP) ✅ Exposed
 
 #### **Build Artifacts:**
 - **Frontend Build:** `/app/frontend/build/` ✅ Deployed
 - **Static Assets:** JS/CSS bundles ✅ Optimized
-- **Docker Image:** `fire-safety-scanner-7-27-2025-app` ✅ Latest
+- **Docker Image:** `fire-safety-scanner-main-app` ✅ Latest
 
 ### 🔍 **DEBUGGING HISTORY**
 

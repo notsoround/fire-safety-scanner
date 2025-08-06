@@ -74,7 +74,7 @@ App.js
 ### **Container Status:**
 ```bash
 CONTAINER ID   IMAGE                               STATUS          PORTS
-66a6fc3a641f   fire-safety-scanner-7-27-2025-app   Up 10 seconds   0.0.0.0:8080->80/tcp
+66a6fc3a641f   fire-safety-scanner-main-app   Up 10 seconds   0.0.0.0:8080->80/tcp
 1c1d72e038c5   mongo:6.0                           Up 21 minutes   0.0.0.0:27017->27017/tcp
 ```
 

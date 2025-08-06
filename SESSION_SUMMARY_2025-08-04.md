@@ -26,7 +26,7 @@ Implement a camera preview feature shaped like a fire extinguisher inspection ta
 ### 4. **Production Deployment**
 - **Frontend Build:** ✅ Successful (`npm run build` - 62.99 kB bundle)
 - **Docker Rebuild:** ✅ Complete (`docker-compose up --build -d`)
-- **Container Status:** ✅ Running (fire-safety-scanner-7-27-2025-app-1)
+- **Container Status:** ✅ Running (fire-safety-scanner-main-app-1)
 
 ## 🔧 TECHNICAL ACHIEVEMENTS
 
@@ -82,8 +82,8 @@ useEffect(() => {
 ## 🏗️ INFRASTRUCTURE STATUS
 
 ### **Docker Environment**
-- **App Container:** `fire-safety-scanner-7-27-2025-app-1` ✅ Running
-- **MongoDB Container:** `fire-safety-scanner-7-27-2025-mongo-1` ✅ Running
+- **App Container:** `fire-safety-scanner-main-app-1` ✅ Running
+- **MongoDB Container:** `fire-safety-scanner-main-mongo-1` ✅ Running
 - **Build Time:** ~10.8s (optimized)
 - **Bundle Size:** 62.99 kB (efficient)
 
