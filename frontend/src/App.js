@@ -19,6 +19,7 @@ const App = () => {
   const [editingInspection, setEditingInspection] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [modalImage, setModalImage] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -66,7 +67,7 @@ const App = () => {
         id: "demo-user",
         email: "admin@firesafety.com",
         name: "Fire Safety Admin",
-        picture: "https://via.placeholder.com/150"
+        picture: "/images/company-log.png"
       });
       localStorage.setItem('session_token', 'demo-session-token');
     } catch (error) {
@@ -381,6 +382,39 @@ const App = () => {
     }
   };
 
+  const deleteInspection = async (inspectionId) => {
+    if (!window.confirm('Are you sure you want to delete this inspection? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const sessionToken = localStorage.getItem('session_token');
+      const response = await fetch(`${backendUrl}/api/inspections/${inspectionId}`, {
+        method: 'DELETE',
+        headers: {
+          'session-token': sessionToken
+        }
+      });
+
+      if (response.ok) {
+        alert('Inspection deleted successfully!');
+        loadInspections(); // Refresh the list
+        loadDueInspections(); // Refresh due inspections
+        // If we were editing this inspection, cancel editing
+        if (editingInspection === inspectionId) {
+          setEditingInspection(null);
+          setEditFormData({});
+        }
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Failed to delete inspection');
+      }
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert('Failed to delete inspection. Please try again.');
+    }
+  };
+
   // Handle auth callback
   useEffect(() => {
     if (window.location.pathname === '/profile') {
@@ -402,7 +436,7 @@ const App = () => {
       id: "demo-user",
       email: "admin@firesafety.com",
       name: "Fire Safety Admin",
-      picture: "https://via.placeholder.com/150"
+      picture: "/images/company-log.png"
     });
     localStorage.setItem('session_token', 'demo-session-token');
   }
@@ -418,49 +452,138 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
       {/* Background Image */}
-      <div 
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40"
         style={{
-          backgroundImage: 'none'
+          backgroundImage: 'url(/images/background.png)'
         }}
       />
       
       {/* Header */}
-      <header className="relative z-10 bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">Fire Safety Scanner</h1>
-          <nav className="flex items-center space-x-4">
-            <button
-              onClick={() => setCurrentPage('dashboard')}
-              className={`px-4 py-2 rounded-lg transition-all duration-300 ${
-                currentPage === 'dashboard' 
-                  ? 'bg-white/20 text-white' 
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setCurrentPage('inspections')}
-              className={`px-4 py-2 rounded-lg transition-all duration-300 ${
-                currentPage === 'inspections' 
-                  ? 'bg-white/20 text-white' 
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              Inspections
-            </button>
-            <div className="flex items-center space-x-2">
-              <img src={user.picture} alt="Profile" className="w-8 h-8 rounded-full" />
-              <span className="text-white text-sm">{user.name}</span>
-              <button
-                onClick={handleLogout}
-                className="text-white/70 hover:text-white transition-colors duration-300"
-              >
-                Logout
-              </button>
+      <header className="relative z-10 bg-black/15 backdrop-blur-sm border-b border-white/10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <img
+                src="/images/company-log.png"
+                alt="Company Logo"
+                className="w-10 h-10 rounded-lg object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              <h1 className="text-2xl font-bold text-white">Fire Safety Scanner</h1>
             </div>
-          </nav>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-4">
+              <button
+                onClick={() => setCurrentPage('dashboard')}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                  currentPage === 'dashboard'
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                Capture
+              </button>
+              <button
+                onClick={() => setCurrentPage('inspections')}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                  currentPage === 'inspections'
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                Validate
+              </button>
+              <div className="flex items-center space-x-2">
+                <img
+                  src={user.picture}
+                  alt="Company Logo"
+                  className="w-8 h-8 rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/150";
+                  }}
+                />
+                <span className="text-white text-sm hidden lg:block">{user.name}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-white/70 hover:text-white transition-colors duration-300"
+                >
+                  Data
+                </button>
+              </div>
+            </nav>
+
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors duration-300"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile Navigation Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 border-t border-white/10 pt-4">
+              <nav className="flex flex-col space-y-2">
+                <button
+                  onClick={() => {
+                    setCurrentPage('dashboard');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`px-4 py-3 rounded-lg transition-all duration-300 text-left ${
+                    currentPage === 'dashboard'
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  📊 Capture
+                </button>
+                <button
+                  onClick={() => {
+                    setCurrentPage('inspections');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`px-4 py-3 rounded-lg transition-all duration-300 text-left ${
+                    currentPage === 'inspections'
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  📋 Validate
+                </button>
+                <div className="flex items-center space-x-3 px-4 py-3 text-white">
+                  <img
+                    src={user.picture}
+                    alt="Company Logo"
+                    className="w-8 h-8 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/150";
+                    }}
+                  />
+                  <span className="text-sm">{user.name}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="px-4 py-3 rounded-lg text-left text-white/70 hover:text-white hover:bg-white/10 transition-colors duration-300"
+                >
+                  🚪 Data
+                </button>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
 
@@ -471,11 +594,11 @@ const App = () => {
           <div className="space-y-8">
             {/* User Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+              <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
                 <h3 className="text-lg font-semibold text-white mb-2">Total Inspections</h3>
                 <p className="text-3xl font-bold text-green-400">{inspections.length}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+              <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
                 <h3 className="text-lg font-semibold text-white mb-2">Due Soon</h3>
                 <p className="text-3xl font-bold text-red-400">{dueInspections.length}</p>
               </div>
@@ -483,7 +606,7 @@ const App = () => {
 
             {/* Due Inspections Alert */}
             {dueInspections.length > 0 && (
-              <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6">
+              <div className="bg-red-500/15 border border-red-500/50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">🚨 Inspections Due Soon</h3>
                 <div className="space-y-2">
                   {dueInspections.map((inspection) => (
@@ -497,7 +620,7 @@ const App = () => {
             )}
 
             {/* Image Upload Section */}
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
               <h2 className="text-2xl font-bold text-white mb-6">Upload Fire Extinguisher Tag</h2>
               
               <div className="space-y-4">
@@ -574,7 +697,7 @@ const App = () => {
 
             {/* Analysis Result */}
             {inspectionResult && (
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+              <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
                 <h3 className="text-xl font-bold text-white mb-4">Analysis Result</h3>
                 <div className="bg-black/20 rounded-lg p-4 text-white/80">
                   {typeof inspectionResult.analysis === 'object' ? (
@@ -607,13 +730,13 @@ const App = () => {
             <h2 className="text-2xl font-bold text-white">Inspection History</h2>
             
             {inspections.length === 0 ? (
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 text-center">
+              <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20 text-center">
                 <p className="text-white/80">No inspections yet. Start by uploading your first fire extinguisher tag!</p>
               </div>
             ) : (
               <div className="grid gap-6">
                 {inspections.map((inspection) => (
-                  <div key={inspection.id} className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+                  <div key={inspection.id} className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-white">{inspection.location}</h3>
@@ -630,6 +753,13 @@ const App = () => {
                           className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded-full hover:bg-blue-500/30 transition-colors duration-300"
                         >
                           ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => deleteInspection(inspection.id)}
+                          className="px-3 py-1 bg-red-500/20 text-red-400 text-sm rounded-full hover:bg-red-500/30 transition-colors duration-300"
+                          title="Delete inspection"
+                        >
+                          🗑️ Delete
                         </button>
                       </div>
                     </div>
