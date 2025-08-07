@@ -17,23 +17,12 @@ services:
 
   mongo:
     image: mongo:6.0
-    # SECURITY FIX: Remove external port exposure to prevent ransomware attacks
-    # ports:
-    #   - "27017:27017"  # REMOVED - MongoDB should only be accessible internally
+    ports:
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
       - ./sample_data:/docker-entrypoint-initdb.d
     restart: unless-stopped
-    environment:
-      # Add authentication for additional security
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   mongo_data:

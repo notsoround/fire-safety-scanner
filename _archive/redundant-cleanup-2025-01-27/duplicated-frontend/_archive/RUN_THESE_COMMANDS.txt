@@ -1,0 +1,18 @@
+🔥 COPY AND PASTE THESE COMMANDS IN YOUR SSH SESSION:
+
+# The config is already fixed! Now just restart the containers:
+
+docker-compose -f docker-compose.prod.yml down
+
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# Wait 30 seconds for startup
+sleep 30
+
+# Test the fix
+curl -I http://localhost:8080/ | head -1
+
+# Test backend
+curl -s http://localhost:8001/api/health
+
+# That's it! Then test https://scanner.hales.ai/ in your browser

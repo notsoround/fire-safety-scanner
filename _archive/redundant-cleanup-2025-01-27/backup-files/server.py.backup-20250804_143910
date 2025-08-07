@@ -94,13 +94,8 @@ class InspectionUpdate(BaseModel):
 async def analyze_image_layer(prompt: str, data_url: str) -> str:
     """Generic helper to call the AI model with a specific prompt and image."""
     try:
-        print(f"🔍 AI Analysis Starting...")
-        print(f"🔑 API Key: {OPENROUTER_API_KEY[:20]}...")
-        print(f"📝 Prompt: {prompt[:100]}...")
-        print(f"🖼️ Image URL length: {len(data_url)}")
-        
         response = await litellm.acompletion(
-            model="openrouter/google/gemini-2.5-pro",
+            model="google/gemini-2.5-pro",
             api_key=OPENROUTER_API_KEY,
             api_base="https://openrouter.ai/api/v1",
             messages=[
@@ -121,15 +116,11 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
             ]
         )
         result = response.choices[0].message.content.strip()
-        print(f"✅ AI Response Success: {result}")
+        print(f"AI Response: {result}")  # Debug logging
         return result
     except Exception as e:
-        # Enhanced error logging for debugging
-        print(f"❌ AI Analysis Error - Model: google/gemini-2.5-pro")
-        print(f"❌ AI Analysis Error - API Key: {OPENROUTER_API_KEY[:20]}...")
-        print(f"❌ AI Analysis Error - Error Type: {type(e).__name__}")
-        print(f"❌ AI Analysis Error - Full Error: {str(e)}")
-        print(f"❌ AI Analysis Error - Prompt: {prompt[:100]}...")
+        # Log the error for debugging
+        print(f"AI Analysis Error: {str(e)}")
         return "unknown"
 
 async def extract_raw_text(data_url: str) -> str:
@@ -438,9 +429,6 @@ async def create_inspection(
         gemini_response = json.dumps(final_analysis_json, indent=2)
         # --- END REFACTORED AI ANALYSIS ---
 
-        print(f"🔍 Creating inspection record...")
-        print(f"📊 Analysis result: {final_analysis_json}")
-
         # Create inspection record
         inspection_id = str(uuid.uuid4())
         inspection = {
@@ -455,8 +443,6 @@ async def create_inspection(
             "created_at": datetime.utcnow()
         }
         
-        print(f"💾 Attempting to save to database...")
-        
         # Extract due date from the structured JSON for alerts
         try:
             if final_analysis_json.get("next_due_date"):
@@ -470,14 +456,8 @@ async def create_inspection(
         except (ValueError, TypeError):
             pass
         
-        # Insert into database
-        try:
-            print(f"💾 Inserting into collection: {inspections_collection.name}")
-            result = inspections_collection.insert_one(inspection)
-            print(f"✅ Database insert successful! ID: {result.inserted_id}")
-        except Exception as e:
-            print(f"❌ Database insert failed: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        # Skip database insertion for demo
+        # inspections_collection.insert_one(inspection)
         
         # Send structured data to N8n webhook
         webhook_data = {
@@ -621,21 +601,12 @@ async def get_inspections():
 @app.get("/api/inspections/due")
 async def get_due_inspections():
     """Fetches inspections that are due within the next 30 days."""
-    try:
-        # Bypass authentication for demo - use demo user
-        demo_user = {
-            "id": "demo-user",
-            "email": "demo@example.com"
-        }
-        
-        due_date_threshold = datetime.utcnow() + timedelta(days=30)
-        query = {
-            "user_id": demo_user["id"],
-            "due_date": {"$lte": due_date_threshold}
-        }
-        return await _get_mongo_inspections(query)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    due_date_threshold = datetime.utcnow() + timedelta(days=30)
+    query = {
+        "user_id": "demo-user",
+        "due_date": {"$lte": due_date_threshold}
+    }
+    return await _get_mongo_inspections(query)
 
 
 @app.get("/api/health")

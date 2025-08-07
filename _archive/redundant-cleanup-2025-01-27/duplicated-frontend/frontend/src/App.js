@@ -11,7 +11,6 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedImage, setSelectedImage] = useState(null);
   const [location, setLocation] = useState('');
-  const [selectedLocations, setSelectedLocations] = useState([]);
   const [notes, setNotes] = useState('');
   const [inspectionResult, setInspectionResult] = useState(null);
   const [inspections, setInspections] = useState([]);
@@ -27,56 +26,6 @@ const App = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
-
-  // CSV Export Functions
-  const generateCSV = () => {
-    const headers = ['Date', 'Location', 'Type', 'Condition', 'Last Inspection', 'Next Due', 'Status', 'Notes'];
-    const csvRows = [headers.join(',')];
-
-    inspections.forEach(inspection => {
-      let parsed = {};
-      try {
-        if (typeof inspection.gemini_response === 'object') {
-          parsed = inspection.gemini_response;
-        } else if (typeof inspection.gemini_response === 'string') {
-          const jsonMatch = inspection.gemini_response.match(/```json\s*(\{[\s\S]*?\})\s*```|(\{[\s\S]*\})/);
-          if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[1] || jsonMatch[2]);
-          }
-        }
-      } catch (e) {
-        parsed = {};
-      }
-
-      const row = [
-        new Date(inspection.inspection_date).toLocaleDateString(),
-        `"${inspection.location}"`,
-        `"${parsed.extinguisher_type || 'N/A'}"`,
-        `"${parsed.condition || 'N/A'}"`,
-        `"${parsed.last_inspection_date ? formatDate(parsed.last_inspection_date) : 'N/A'}"`,
-        `"${parsed.next_due_date ? formatDate(parsed.next_due_date) : 'N/A'}"`,
-        `"${inspection.status}"`,
-        `"${inspection.notes || parsed.maintenance_notes || 'N/A'}"`
-      ];
-      csvRows.push(row.join(','));
-    });
-
-    return csvRows.join('\n');
-  };
-
-  const downloadCSV = (csvContent, filename) => {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', filename);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
 
   useEffect(() => {
     checkSession();
@@ -536,7 +485,7 @@ const App = () => {
                     : 'text-white/70 hover:text-white hover:bg-white/10'
                 }`}
               >
-                Capture
+                Dashboard
               </button>
               <button
                 onClick={() => setCurrentPage('inspections')}
@@ -546,14 +495,23 @@ const App = () => {
                     : 'text-white/70 hover:text-white hover:bg-white/10'
                 }`}
               >
-                Validate
+                Inspections
               </button>
               <div className="flex items-center space-x-2">
+                <img
+                  src={user.picture}
+                  alt="Company Logo"
+                  className="w-8 h-8 rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/150";
+                  }}
+                />
+                <span className="text-white text-sm hidden lg:block">{user.name}</span>
                 <button
-                  onClick={() => setCurrentPage('data')}
+                  onClick={handleLogout}
                   className="text-white/70 hover:text-white transition-colors duration-300"
                 >
-                  📊 Data
+                  Logout
                 </button>
               </div>
             </nav>
@@ -588,7 +546,7 @@ const App = () => {
                       : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  📊 Capture
+                  📊 Dashboard
                 </button>
                 <button
                   onClick={() => {
@@ -601,16 +559,27 @@ const App = () => {
                       : 'text-white/70 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  📋 Validate
+                  📋 Inspections
                 </button>
+                <div className="flex items-center space-x-3 px-4 py-3 text-white">
+                  <img
+                    src={user.picture}
+                    alt="Company Logo"
+                    className="w-8 h-8 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/150";
+                    }}
+                  />
+                  <span className="text-sm">{user.name}</span>
+                </div>
                 <button
                   onClick={() => {
-                    setCurrentPage('data');
+                    handleLogout();
                     setIsMobileMenuOpen(false);
                   }}
                   className="px-4 py-3 rounded-lg text-left text-white/70 hover:text-white hover:bg-white/10 transition-colors duration-300"
                 >
-                  📊 Data
+                  🚪 Logout
                 </button>
               </nav>
             </div>
@@ -623,8 +592,7 @@ const App = () => {
 
         {currentPage === 'dashboard' && (
           <div className="space-y-8">
-            {/* User Stats - Commented out for future use */}
-            {/*
+            {/* User Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
                 <h3 className="text-lg font-semibold text-white mb-2">Total Inspections</h3>
@@ -635,10 +603,8 @@ const App = () => {
                 <p className="text-3xl font-bold text-red-400">{dueInspections.length}</p>
               </div>
             </div>
-            */}
 
-            {/* Due Inspections Alert - Commented out for future use */}
-            {/*
+            {/* Due Inspections Alert */}
             {dueInspections.length > 0 && (
               <div className="bg-red-500/15 border border-red-500/50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">🚨 Inspections Due Soon</h3>
@@ -652,7 +618,6 @@ const App = () => {
                 </div>
               </div>
             )}
-            */}
 
             {/* Image Upload Section */}
             <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
@@ -705,105 +670,13 @@ const App = () => {
                 )}
 
                 <div className="space-y-4">
-                  {/* Location Multi-Select with Checkboxes */}
-                  <div className="relative">
-                    <label className="block text-white text-sm font-medium mb-2">
-                      Location (Select multiple) *
-                    </label>
-                    <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-4 max-h-48 overflow-y-auto">
-                      {/* Floors */}
-                      <div className="mb-4">
-                        <h4 className="text-white text-sm font-medium mb-2">Floors</h4>
-                        <div className="space-y-2">
-                          {['Floor 1', 'Floor 2', 'Floor 3'].map((floor) => (
-                            <label key={floor} className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                value={floor}
-                                checked={selectedLocations.includes(floor)}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  let newSelections;
-                                  if (e.target.checked) {
-                                    newSelections = [...selectedLocations, value];
-                                  } else {
-                                    newSelections = selectedLocations.filter(loc => loc !== value);
-                                  }
-                                  setSelectedLocations(newSelections);
-                                  setLocation(newSelections.join(', '));
-                                }}
-                                className="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500 focus:ring-2"
-                              />
-                              <span className="text-white text-sm">{floor}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Areas */}
-                      <div className="mb-4">
-                        <h4 className="text-white text-sm font-medium mb-2">Areas</h4>
-                        <div className="space-y-2">
-                          {['Hallway', 'Office Room'].map((area) => (
-                            <label key={area} className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                value={area}
-                                checked={selectedLocations.includes(area)}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  let newSelections;
-                                  if (e.target.checked) {
-                                    newSelections = [...selectedLocations, value];
-                                  } else {
-                                    newSelections = selectedLocations.filter(loc => loc !== value);
-                                  }
-                                  setSelectedLocations(newSelections);
-                                  setLocation(newSelections.join(', '));
-                                }}
-                                className="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500 focus:ring-2"
-                              />
-                              <span className="text-white text-sm">{area}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Directions */}
-                      <div>
-                        <h4 className="text-white text-sm font-medium mb-2">Directions</h4>
-                        <div className="space-y-2">
-                          {['North', 'South', 'East', 'West'].map((direction) => (
-                            <label key={direction} className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                value={direction}
-                                checked={selectedLocations.includes(direction)}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  let newSelections;
-                                  if (e.target.checked) {
-                                    newSelections = [...selectedLocations, value];
-                                  } else {
-                                    newSelections = selectedLocations.filter(loc => loc !== value);
-                                  }
-                                  setSelectedLocations(newSelections);
-                                  setLocation(newSelections.join(', '));
-                                }}
-                                className="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500 focus:ring-2"
-                              />
-                              <span className="text-white text-sm">{direction}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    {selectedLocations.length > 0 && (
-                      <div className="mt-2 text-sm text-white/70">
-                        Selected: {selectedLocations.join(', ')}
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    placeholder="Location (e.g., Building A - 1st Floor)"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                   <textarea
                     placeholder="Additional notes (optional)"
                     value={notes}
@@ -813,10 +686,10 @@ const App = () => {
                   />
                   <button
                     onClick={analyzeImage}
-                    disabled={isAnalyzing || !selectedImage || selectedLocations.length === 0}
+                    disabled={isAnalyzing || !selectedImage || !location.trim()}
                     className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-3 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
-                    {isAnalyzing ? '🔍 Analyzing...' : '🔍 Analyze and Submit'}
+                    {isAnalyzing ? '🔍 Analyzing...' : '🔍 Analyze Image'}
                   </button>
                 </div>
               </div>
@@ -1068,131 +941,6 @@ const App = () => {
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {/* Data Tab - Spreadsheet View */}
-        {currentPage === 'data' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">📊 Inspection Data</h2>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => {
-                    const csvContent = generateCSV();
-                    downloadCSV(csvContent, 'fire-safety-inspections.csv');
-                  }}
-                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-300"
-                >
-                  📥 Export CSV
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-300"
-                >
-                  🖨️ Print
-                </button>
-              </div>
-            </div>
-
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white/8 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                <h3 className="text-lg font-semibold text-white mb-2">Total Inspections</h3>
-                <p className="text-2xl font-bold text-green-400">{inspections.length}</p>
-              </div>
-              <div className="bg-white/8 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                <h3 className="text-lg font-semibold text-white mb-2">This Month</h3>
-                <p className="text-2xl font-bold text-blue-400">
-                  {inspections.filter(i => new Date(i.inspection_date).getMonth() === new Date().getMonth()).length}
-                </p>
-              </div>
-              <div className="bg-white/8 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                <h3 className="text-lg font-semibold text-white mb-2">Locations</h3>
-                <p className="text-2xl font-bold text-purple-400">
-                  {new Set(inspections.map(i => i.location)).size}
-                </p>
-              </div>
-            </div>
-
-            {/* Data Table */}
-            <div className="bg-white/8 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden">
-              {inspections.length === 0 ? (
-                <div className="p-8 text-center">
-                  <p className="text-white/80">No inspection data available. Start by uploading your first fire extinguisher tag!</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-white">
-                    <thead className="bg-white/10">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-semibold">Date</th>
-                        <th className="px-4 py-3 text-left font-semibold">Location</th>
-                        <th className="px-4 py-3 text-left font-semibold">Type</th>
-                        <th className="px-4 py-3 text-left font-semibold">Condition</th>
-                        <th className="px-4 py-3 text-left font-semibold">Last Inspection</th>
-                        <th className="px-4 py-3 text-left font-semibold">Next Due</th>
-                        <th className="px-4 py-3 text-left font-semibold">Status</th>
-                        <th className="px-4 py-3 text-left font-semibold">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {inspections.map((inspection, index) => {
-                        let parsed = {};
-                        try {
-                          if (typeof inspection.gemini_response === 'object') {
-                            parsed = inspection.gemini_response;
-                          } else if (typeof inspection.gemini_response === 'string') {
-                            const jsonMatch = inspection.gemini_response.match(/```json\s*(\{[\s\S]*?\})\s*```|(\{[\s\S]*\})/);
-                            if (jsonMatch) {
-                              parsed = JSON.parse(jsonMatch[1] || jsonMatch[2]);
-                            }
-                          }
-                        } catch (e) {
-                          parsed = {};
-                        }
-
-                        return (
-                          <tr key={inspection.id} className={`border-t border-white/10 hover:bg-white/5 ${index % 2 === 0 ? 'bg-white/5' : ''}`}>
-                            <td className="px-4 py-3 text-sm">
-                              {new Date(inspection.inspection_date).toLocaleDateString()}
-                            </td>
-                            <td className="px-4 py-3 text-sm font-medium">{inspection.location}</td>
-                            <td className="px-4 py-3 text-sm">{parsed.extinguisher_type || 'N/A'}</td>
-                            <td className="px-4 py-3 text-sm">{parsed.condition || 'N/A'}</td>
-                            <td className="px-4 py-3 text-sm">
-                              {parsed.last_inspection_date ? formatDate(parsed.last_inspection_date) : 'N/A'}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              {parsed.next_due_date ? formatDate(parsed.next_due_date) : 'N/A'}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
-                                {inspection.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <button
-                                onClick={() => setModalImage(`data:image/jpeg;base64,${inspection.image_base64}`)}
-                                className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded hover:bg-blue-500/30 transition-colors duration-300 mr-2"
-                              >
-                                👁️ View
-                              </button>
-                              <button
-                                onClick={() => deleteInspection(inspection.id)}
-                                className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded hover:bg-red-500/30 transition-colors duration-300"
-                              >
-                                🗑️ Delete
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
           </div>
         )}
 

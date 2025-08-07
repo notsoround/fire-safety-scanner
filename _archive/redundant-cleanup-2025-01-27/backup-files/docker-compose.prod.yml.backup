@@ -1,0 +1,21 @@
+  version: '3.8'
+
+  services:
+    app:
+      build:
+        context: .
+        args:
+          - REACT_APP_BACKEND_URL=https://scanner.hales.ai
+      ports:
+        - "8080:80"
+        - "8443:443"
+        - "8001:8001"
+      environment:
+        - MONGO_URL=mongodb://172.17.0.1:27017
+        - DB_NAME=fire_safety_db
+        - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+        - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      volumes:
+        - /etc/letsencrypt:/etc/letsencrypt:ro
+        - ./docker/nginx.conf:/etc/nginx/sites-available/default
+      restart: unless-stopped
