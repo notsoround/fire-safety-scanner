@@ -24,10 +24,11 @@ services:
       - mongo_data:/data/db
       - ./sample_data:/docker-entrypoint-initdb.d
     restart: unless-stopped
-    environment:
-      # Add authentication for additional security
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    # Temporarily removed authentication for testing
+    # environment:
+    #   # Add authentication for additional security
+    #   MONGO_INITDB_ROOT_USERNAME: admin
+    #   MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     networks:
       - app-network
 
