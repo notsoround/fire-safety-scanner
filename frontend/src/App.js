@@ -344,9 +344,20 @@ const App = () => {
         setNotes('');
         loadInspections();
         loadDueInspections();
+      } else if (response.status === 504 || response.status === 502) {
+        // Backend might have finished even if gateway timed out. Try to refresh list and show a softer message.
+        await loadInspections();
+        await loadDueInspections();
+        alert('The analysis took longer than expected, but the result may still have been saved. Please check the Validate or Data tabs.');
       } else {
-        const error = await response.json();
-        alert(error.detail || 'Analysis failed');
+        let message = 'Analysis failed';
+        try {
+          const error = await response.json();
+          message = error.detail || message;
+        } catch (_) {
+          // Response was likely HTML (nginx error page). Keep default message.
+        }
+        alert(message);
       }
     } catch (error) {
       console.error('Analysis failed:', error);
