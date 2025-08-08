@@ -399,6 +399,7 @@ async def create_inspection(
     }
     
     try:
+        start_time = datetime.utcnow()
         # Detect image format from base64 content and create proper data URL
         image_base64 = inspection_request.image_base64
         
@@ -502,7 +503,14 @@ async def create_inspection(
         except requests.exceptions.RequestException as e:
             print(f"Error sending webhook: {e}")
 
-        return {"inspection_id": inspection_id, "analysis": final_analysis_json}
+        duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        return {
+            "success": True,
+            "inspection_id": inspection_id,
+            "analysis": final_analysis_json,
+            "duration_ms": duration_ms,
+            "model": os.getenv("MODEL_ID", "openrouter/openai/gpt-5")
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

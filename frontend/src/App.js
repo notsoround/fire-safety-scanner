@@ -338,6 +338,10 @@ const App = () => {
 
       if (response.ok) {
         const result = await response.json();
+        // Treat success flag if present, but still handle without it
+        if (result && result.success) {
+          console.log(`Analysis succeeded in ${result.duration_ms} ms using ${result.model}`);
+        }
         setInspectionResult(result);
         setSelectedImage(null);
         setLocation('');
