@@ -576,6 +576,39 @@ async def update_inspection(
 
     return {"message": "Inspection updated successfully"}
 
+@app.delete("/api/inspections/{inspection_id}")
+async def delete_inspection(
+    inspection_id: str,
+    user: dict = Depends(get_current_user)
+):
+    """Deletes an inspection record."""
+    try:
+        # Find the inspection to delete
+        inspection = inspections_collection.find_one({
+            "id": inspection_id,
+            "user_id": user["id"]
+        })
+        
+        if not inspection:
+            raise HTTPException(status_code=404, detail="Inspection not found")
+        
+        # Delete the inspection
+        result = inspections_collection.delete_one({
+            "id": inspection_id,
+            "user_id": user["id"]
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Inspection not found")
+        
+        return {"message": "Inspection deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting inspection {inspection_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 async def _get_mongo_inspections(query: dict):
     """Helper to fetch and process inspections from MongoDB."""
     inspections = list(inspections_collection.find(query))
