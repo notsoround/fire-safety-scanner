@@ -99,14 +99,21 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
         print(f"📝 Prompt: {prompt[:100]}...")
         print(f"🖼️ Image URL length: {len(data_url)}")
         
+        # Use ChatGPT‑5 vision via OpenRouter; configurable via env if needed
+        model_id = os.getenv("MODEL_ID", "openrouter/openai/gpt-5")
         response = await litellm.acompletion(
-            model="openrouter/google/gemini-2.5-pro",
+            model=model_id,
             api_key=OPENROUTER_API_KEY,
             api_base="https://openrouter.ai/api/v1",
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a fire safety expert specializing in analyzing fire extinguisher inspection tags. You analyze images of fire extinguisher tags to extract specific information. Always respond with only the requested information, no additional text or explanation."
+                    "content": (
+                        "You are an NFPA-10–savvy fire safety expert analyzing hole-punched extinguisher tags. "
+                        "Infer the most recent year/month/day from punches; prefer the newest complete combo. "
+                        "If multiple days are punched, choose the lowest; if unreadable, answer 'unknown'. "
+                        "Always respond with only the exact value requested by the user message (no prose)."
+                    )
                 },
                 {
                     "role": "user",
@@ -125,7 +132,7 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
         return result
     except Exception as e:
         # Enhanced error logging for debugging
-        print(f"❌ AI Analysis Error - Model: google/gemini-2.5-pro")
+        print(f"❌ AI Analysis Error - Model: {os.getenv('MODEL_ID', 'openrouter/openai/gpt-5')}")
         print(f"❌ AI Analysis Error - API Key: {OPENROUTER_API_KEY[:20]}...")
         print(f"❌ AI Analysis Error - Error Type: {type(e).__name__}")
         print(f"❌ AI Analysis Error - Full Error: {str(e)}")
