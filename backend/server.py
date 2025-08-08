@@ -101,10 +101,12 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
         
         # Use ChatGPT‑5 vision via OpenRouter; configurable via env if needed
         model_id = os.getenv("MODEL_ID", "openrouter/openai/gpt-5")
+        request_timeout = int(os.getenv("LLM_TIMEOUT", "240"))
         response = await litellm.acompletion(
             model=model_id,
             api_key=OPENROUTER_API_KEY,
             api_base="https://openrouter.ai/api/v1",
+            timeout=request_timeout,
             messages=[
                 {
                     "role": "system",
