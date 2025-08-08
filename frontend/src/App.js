@@ -320,6 +320,7 @@ const App = () => {
     setInspectionResult(null);
 
     try {
+      const requestStartedAtMs = Date.now();
       const sessionToken = localStorage.getItem('session_token');
       const imageBase64 = selectedImage.split(',')[1]; // Remove data URL prefix
       
@@ -349,10 +350,40 @@ const App = () => {
         loadInspections();
         loadDueInspections();
       } else if (response.status === 504 || response.status === 502) {
-        // Backend might have finished even if gateway timed out. Try to refresh list and show a softer message.
+        // Backend may have completed despite the gateway timeout. Pull latest record and show it here.
+        try {
+          const listRes = await fetch(`${backendUrl}/api/inspections`, {
+            headers: { 'session-token': sessionToken }
+          });
+          if (listRes.ok) {
+            const items = await listRes.json();
+            const startedAt = requestStartedAtMs;
+            const candidates = items
+              .filter(i => i && i.created_at)
+              .map(i => ({ item: i, ts: Date.parse(i.created_at || 0) || 0 }))
+              .filter(x => x.ts >= startedAt)
+              .sort((a, b) => b.ts - a.ts);
+            if (candidates.length > 0) {
+              const latest = candidates[0].item;
+              setInspectionResult({
+                success: true,
+                inspection_id: latest.id,
+                analysis: latest.gemini_response || latest.analysis || {}
+              });
+              setSelectedImage(null);
+              setLocation('');
+              setNotes('');
+              await loadInspections();
+              await loadDueInspections();
+              return; // Do not show the timeout alert since we recovered the result
+            }
+          }
+        } catch (_) {
+          // fall through to soft alert
+        }
         await loadInspections();
         await loadDueInspections();
-        alert('The analysis took longer than expected, but the result may still have been saved. Please check the Validate or Data tabs.');
+        alert('The analysis took longer than expected. We could not auto-retrieve the result, but it may have been saved. Please check the Validate or Data tabs.');
       } else {
         let message = 'Analysis failed';
         try {
