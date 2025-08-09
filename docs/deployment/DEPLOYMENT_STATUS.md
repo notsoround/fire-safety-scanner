@@ -1,7 +1,7 @@
 # 🚀 Fire Safety Scanner - Production Deployment Status
 
-**Last Updated**: January 27, 2025  
-**Status**: ✅ **FULLY OPERATIONAL WITH ENHANCED DATA CAPTURE**
+**Last Updated**: August 9, 2025  
+**Status**: ✅ **FULLY OPERATIONAL - AI ANALYSIS FIXED**
 
 ## 🎯 **CURRENT PRODUCTION STATUS**
 
@@ -9,7 +9,7 @@
 - **Domain**: https://scanner.hales.ai (SSL Enabled)
 - **Server**: Digital Ocean Droplet (134.199.239.171)
 - **Database**: Enhanced inspection data with service company info, equipment numbers, and service details
-- **AI Analysis**: Gemini 2.5 Pro providing real analysis responses
+- **AI Analysis**: Gemini 2.5 Pro fully operational (MODEL_ID fix deployed Aug 9)
 - **Uptime**: All containers running and healthy
 
 ### **🔧 CORE COMPONENTS STATUS**
@@ -26,7 +26,8 @@
 ## 🔑 **PRODUCTION CONFIGURATION**
 
 ### **Environment Variables**
-- **OpenRouter API Key**: `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`
+- **OpenRouter API Key**: `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` (Active)
+- **MODEL_ID**: `openrouter/google/gemini-2.5-pro` (CRITICAL: Requires openrouter/ prefix)
 - **Database**: `mongodb://mongo:27017/production_database`
 - **Backend URL**: `https://scanner.hales.ai`
 

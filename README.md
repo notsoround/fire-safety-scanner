@@ -32,10 +32,11 @@ Transform routine fire extinguisher inspections into strategic business activiti
 - **Infrastructure**: Docker containers on Digital Ocean
 
 ### **📊 Live Metrics**
-- **Inspections Stored**: 5+ verified entries
-- **AI Analysis**: Real Gemini responses confirmed
-- **Uptime**: All services operational
+- **Inspections Stored**: 10+ verified entries
+- **AI Analysis**: OpenRouter API fully operational (MODEL_ID fix deployed)
+- **Uptime**: All services operational and responding
 - **SSL**: Valid certificates and secure access
+- **Latest Fix**: litellm provider configuration resolved (Aug 9, 2025)
 
 ---
 
@@ -123,8 +124,9 @@ DB_NAME="production_database"
 # React App Backend URL
 REACT_APP_BACKEND_URL="https://scanner.hales.ai"
 
-# API Keys
+# API Keys  
 OPENROUTER_API_KEY="sk-or-v1-[your-key]"
+MODEL_ID="openrouter/google/gemini-2.5-pro"  # Note: Requires 'openrouter/' prefix for litellm
 N8N_WEBHOOK_URL="https://automate.hales.ai/webhook/[webhook-id]"
 ```
 
@@ -202,6 +204,34 @@ docker logs fire-safety-scanner-main-app-1
 
 # Database logs
 docker logs fire-safety-scanner-mongo-1
+```
+
+---
+
+## 🔧 Recent Fixes & Technical Notes
+
+### **✅ AI Analysis Resolution (Aug 9, 2025)**
+**Issue**: OpenRouter API calls were failing with `litellm.BadRequestError: LLM Provider NOT provided`  
+**Root Cause**: MODEL_ID was set to `google/gemini-2.5-pro` instead of `openrouter/google/gemini-2.5-pro`  
+**Solution**: Added `openrouter/` provider prefix for litellm compatibility  
+**Result**: AI analysis now fully operational with real Gemini responses
+
+### **🛠️ Key Technical Learnings**
+- **litellm requires provider prefixes** for OpenRouter models
+- **Production debugging via Docker logs**: `/var/log/supervisor/backend.out.log`
+- **Environment variable loading**: Ensure `.env.prod` exists and containers restart after changes
+- **OpenRouter API verification**: Check activity page for actual API call charges
+
+### **🔍 Troubleshooting Commands**
+```bash
+# Check production AI analysis logs
+ssh root@134.199.239.171 "cd projects/fire-safety-scanner && docker exec fire-safety-scanner-app-1 tail -50 /var/log/supervisor/backend.out.log"
+
+# Verify environment variables loaded
+ssh root@134.199.239.171 "cd projects/fire-safety-scanner && docker exec fire-safety-scanner-app-1 printenv | grep -E '(OPENROUTER|MODEL)'"
+
+# Test AI analysis endpoint directly
+curl -X POST https://scanner.hales.ai/api/inspections -H 'Content-Type: application/json' -d '{"image_base64":"[base64]","location":"test","notes":"debug"}'
 ```
 
 ---
