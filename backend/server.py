@@ -99,8 +99,8 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
         print(f"📝 Prompt: {prompt[:100]}...")
         print(f"🖼️ Image URL length: {len(data_url)}")
         
-        # Use ChatGPT‑5 vision via OpenRouter; configurable via env if needed
-        model_id = os.getenv("MODEL_ID", "openrouter/openai/gpt-5")
+        # Use OpenRouter Gemini 2.5 Pro by default; can be overridden via MODEL_ID
+        model_id = os.getenv("MODEL_ID", "google/gemini-2.5-pro")
         request_timeout = int(os.getenv("LLM_TIMEOUT", "240"))
         response = await litellm.acompletion(
             model=model_id,
