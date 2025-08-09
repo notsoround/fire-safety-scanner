@@ -111,6 +111,8 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
             api_key=OPENROUTER_API_KEY,
             api_base="https://openrouter.ai/api/v1",
             timeout=request_timeout,
+            max_tokens=1000,  # Increased from default to avoid truncation
+            temperature=0.1,  # Low temperature for consistent analysis
             messages=[
                 {
                     "role": "system",
@@ -133,7 +135,15 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
                 }
             ]
         )
-        result = response.choices[0].message.content.strip()
+        # Handle response - check content first, then reasoning if content is empty
+        message = response.choices[0].message
+        result = message.content.strip() if message.content else ""
+        
+        # If content is empty but reasoning exists, use reasoning
+        if not result and hasattr(message, 'reasoning') and message.reasoning:
+            result = message.reasoning.strip()
+            print(f"📝 Using reasoning field as content was empty")
+            
         print(f"✅ AI Response Success: {result}")
         return result
     except Exception as e:
