@@ -441,6 +441,16 @@ const App = () => {
         maintenance_notes: parsedData.maintenance_notes || '',
         condition: parsedData.condition || '',
         requires_attention: parsedData.requires_attention || false,
+        // Enhanced fields
+        service_company_name: parsedData.service_company?.name || '',
+        service_company_phone: parsedData.service_company?.phone || '',
+        service_company_address: parsedData.service_company?.address || '',
+        service_company_website: parsedData.service_company?.website || '',
+        ae_number: parsedData.equipment_numbers?.ae_number || '',
+        he_number: parsedData.equipment_numbers?.he_number || '',
+        ee_number: parsedData.equipment_numbers?.ee_number || '',
+        fe_number: parsedData.equipment_numbers?.fe_number || '',
+        service_type: parsedData.service_details?.service_type || '',
     });
 };
 
@@ -1106,6 +1116,105 @@ const App = () => {
                             className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
+
+                        {/* Enhanced Data Fields */}
+                        <div className="border-t border-white/20 pt-4 mt-4">
+                          <h4 className="text-white font-semibold mb-3">🏢 Service Company Information</h4>
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-white font-semibold mb-2">Company Name:</label>
+                              <input
+                                type="text"
+                                value={editFormData.service_company_name || ''}
+                                onChange={(e) => setEditFormData({...editFormData, service_company_name: e.target.value})}
+                                className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-white font-semibold mb-2">Phone:</label>
+                              <input
+                                type="text"
+                                value={editFormData.service_company_phone || ''}
+                                onChange={(e) => setEditFormData({...editFormData, service_company_phone: e.target.value})}
+                                className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-white font-semibold mb-2">Address:</label>
+                              <input
+                                type="text"
+                                value={editFormData.service_company_address || ''}
+                                onChange={(e) => setEditFormData({...editFormData, service_company_address: e.target.value})}
+                                className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-white font-semibold mb-2">Website:</label>
+                              <input
+                                type="text"
+                                value={editFormData.service_company_website || ''}
+                                onChange={(e) => setEditFormData({...editFormData, service_company_website: e.target.value})}
+                                className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-white/20 pt-4 mt-4">
+                          <h4 className="text-white font-semibold mb-3">🧯 Equipment Numbers</h4>
+                          <div className="grid md:grid-cols-4 gap-4">
+                            <div>
+                              <label className="block text-white font-semibold mb-2">AE#:</label>
+                              <input
+                                type="text"
+                                value={editFormData.ae_number || ''}
+                                onChange={(e) => setEditFormData({...editFormData, ae_number: e.target.value})}
+                                className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-white font-semibold mb-2">HE#:</label>
+                              <input
+                                type="text"
+                                value={editFormData.he_number || ''}
+                                onChange={(e) => setEditFormData({...editFormData, he_number: e.target.value})}
+                                className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-white font-semibold mb-2">EE#:</label>
+                              <input
+                                type="text"
+                                value={editFormData.ee_number || ''}
+                                onChange={(e) => setEditFormData({...editFormData, ee_number: e.target.value})}
+                                className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-white font-semibold mb-2">FE#:</label>
+                              <input
+                                type="text"
+                                value={editFormData.fe_number || ''}
+                                onChange={(e) => setEditFormData({...editFormData, fe_number: e.target.value})}
+                                className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-white/20 pt-4 mt-4">
+                          <h4 className="text-white font-semibold mb-3">🔧 Service Details</h4>
+                          <div>
+                            <label className="block text-white font-semibold mb-2">Service Type:</label>
+                            <input
+                              type="text"
+                              value={editFormData.service_type || ''}
+                              onChange={(e) => setEditFormData({...editFormData, service_type: e.target.value})}
+                              className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+
                         <div className="flex space-x-4">
                           <button
                             onClick={saveInspectionChanges}
