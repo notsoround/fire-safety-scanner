@@ -25,12 +25,25 @@ const App = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  
+  // Quick Shot Mode State
+  const [isQuickShotMode, setIsQuickShotMode] = useState(false);
+  const [businessName, setBusinessName] = useState('');
+  const [gpsData, setGpsData] = useState(null);
+  const [isCapturingGPS, setIsCapturingGPS] = useState(false);
+  const [gpsError, setGpsError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Google Maps Business Suggestions
+  const [businessSuggestions, setBusinessSuggestions] = useState([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
   // CSV Export Functions
   const generateCSV = () => {
-    const headers = ['Date', 'Location', 'Type', 'Condition', 'Last Inspection', 'Next Due', 'Service Company', 'Company Phone', 'Equipment Numbers', 'Service Type', 'Status', 'Notes'];
+    const headers = ['Date', 'Location', 'Type', 'Condition', 'Last Inspection', 'Next Due', 'Service Company', 'Company Phone', 'Equipment Numbers', 'Service Type', 'GPS Location', 'Status', 'Notes'];
     const csvRows = [headers.join(',')];
 
     inspections.forEach(inspection => {
@@ -65,6 +78,20 @@ const App = () => {
         }
       }
 
+      // Format GPS data
+      let gpsString = 'N/A';
+      if (inspection.gps_data) {
+        try {
+          const gps = typeof inspection.gps_data === 'string' ? JSON.parse(inspection.gps_data) : inspection.gps_data;
+          if (gps.latitude && gps.longitude) {
+            gpsString = `${gps.latitude.toFixed(6)}, ${gps.longitude.toFixed(6)}`;
+          }
+        } catch (e) {
+          // If GPS data exists but can't be parsed, just note that GPS was captured
+          gpsString = 'GPS Captured';
+        }
+      }
+
       const row = [
         new Date(inspection.inspection_date).toLocaleDateString(),
         `"${inspection.location}"`,
@@ -76,6 +103,7 @@ const App = () => {
         `"${parsed.service_company?.phone && parsed.service_company.phone !== 'unknown' ? parsed.service_company.phone : 'N/A'}"`,
         `"${equipmentNumbers.length > 0 ? equipmentNumbers.join(' | ') : 'N/A'}"`,
         `"${parsed.service_details?.service_type && parsed.service_details.service_type !== 'unknown' ? parsed.service_details.service_type : 'N/A'}"`,
+        `"${gpsString}"`,
         `"${inspection.status}"`,
         `"${inspection.notes || parsed.maintenance_notes || 'N/A'}"`
       ];
@@ -329,6 +357,137 @@ const App = () => {
     const imageData = canvas.toDataURL('image/jpeg');
     setSelectedImage(imageData);
     closeCamera();
+  };
+
+  // Google Maps Business Suggestions
+  const fetchBusinessSuggestions = async (latitude, longitude) => {
+    setIsLoadingSuggestions(true);
+    try {
+      // Using Google Places Text Search API through backend
+      const response = await fetch(`${backendUrl}/api/places/nearby`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'session-token': localStorage.getItem('session_token')
+        },
+        body: JSON.stringify({
+          latitude: latitude,
+          longitude: longitude,
+          radius: 500 // 500 meter radius
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBusinessSuggestions(data.businesses || []);
+        setShowSuggestions(true);
+      } else {
+        console.warn('Could not fetch business suggestions');
+        setBusinessSuggestions([]);
+      }
+    } catch (error) {
+      console.warn('Business suggestion fetch failed:', error);
+      setBusinessSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  // GPS Capture Functions
+  const captureGPS = async () => {
+    setIsCapturingGPS(true);
+    setGpsError(null);
+    
+    try {
+      if (!navigator.geolocation) {
+        throw new Error('Geolocation is not supported by this browser');
+      }
+
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000 // 5 minutes
+          }
+        );
+      });
+
+      const gps = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: new Date().toISOString(),
+        source: 'browser_geolocation'
+      };
+
+      setGpsData(gps);
+      console.log('GPS captured:', gps);
+      
+      // Automatically fetch business suggestions when GPS is captured
+      await fetchBusinessSuggestions(gps.latitude, gps.longitude);
+      
+    } catch (error) {
+      console.error('GPS capture failed:', error);
+      setGpsError(error.message);
+    } finally {
+      setIsCapturingGPS(false);
+    }
+  };
+
+  // Quick Shot Submission
+  const submitQuickShot = async () => {
+    if (!selectedImage || !businessName.trim()) {
+      alert('Please capture an image and enter a business name.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const sessionToken = localStorage.getItem('session_token');
+      const imageBase64 = selectedImage.split(',')[1]; // Remove data URL prefix
+      
+      const submissionData = {
+        image_base64: imageBase64,
+        business_name: businessName.trim(),
+        location: businessName.trim(), // Use business name as location for now
+        notes: `Quick Shot mode submission${gpsData ? ` - GPS: ${gpsData.latitude}, ${gpsData.longitude}` : ''}`,
+        mode: 'quick_shot',
+        gps_data: gpsData,
+        timestamp: new Date().toISOString(),
+        source: 'mobile_camera'
+      };
+
+      const response = await fetch(`${backendUrl}/api/inspections`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'session-token': sessionToken
+        },
+        body: JSON.stringify(submissionData)
+      });
+
+      if (response.ok) {
+        // Show success message and reset form
+        alert('✅ Submitted successfully! Processing in background...');
+        setSelectedImage(null);
+        setBusinessName('');
+        setGpsData(null);
+        setGpsError(null);
+        loadInspections();
+      } else {
+        throw new Error(`Submission failed: ${response.statusText}`);
+      }
+      
+    } catch (error) {
+      console.error('Quick Shot submission failed:', error);
+      alert('❌ Submission failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const analyzeImage = async () => {
@@ -605,6 +764,30 @@ const App = () => {
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-4">
+              {/* Mode Toggle */}
+              <div className="flex bg-white/10 rounded-lg p-1 mr-4">
+                <button
+                  onClick={() => setIsQuickShotMode(false)}
+                  className={`px-3 py-1 rounded text-sm transition-all duration-300 ${
+                    !isQuickShotMode
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  🔧 Technician
+                </button>
+                <button
+                  onClick={() => setIsQuickShotMode(true)}
+                  className={`px-3 py-1 rounded text-sm transition-all duration-300 ${
+                    isQuickShotMode
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  ⚡ Quick Shot
+                </button>
+              </div>
+              
               <button
                 onClick={() => setCurrentPage('dashboard')}
                 className={`px-4 py-2 rounded-lg transition-all duration-300 ${
@@ -700,39 +883,191 @@ const App = () => {
 
         {currentPage === 'dashboard' && (
           <div className="space-y-8">
-            {/* User Stats - Commented out for future use */}
-            {/*
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
-                <h3 className="text-lg font-semibold text-white mb-2">Total Inspections</h3>
-                <p className="text-3xl font-bold text-green-400">{inspections.length}</p>
-              </div>
-              <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
-                <h3 className="text-lg font-semibold text-white mb-2">Due Soon</h3>
-                <p className="text-3xl font-bold text-red-400">{dueInspections.length}</p>
-              </div>
-            </div>
-            */}
-
-            {/* Due Inspections Alert - Commented out for future use */}
-            {/*
-            {dueInspections.length > 0 && (
-              <div className="bg-red-500/15 border border-red-500/50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">🚨 Inspections Due Soon</h3>
-                <div className="space-y-2">
-                  {dueInspections.map((inspection) => (
-                    <div key={inspection.id} className="flex justify-between items-center text-white/80">
-                      <span>{inspection.location}</span>
-                      <span className="text-sm">Due: {new Date(inspection.due_date).toLocaleDateString()}</span>
+            {isQuickShotMode ? (
+              /* Quick Shot Mode Interface */
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-xl p-6 border border-orange-500/50">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <span className="text-2xl">⚡</span>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Quick Shot Mode</h2>
+                      <p className="text-white/70">Snap → Name → Submit → Go!</p>
                     </div>
-                  ))}
+                  </div>
+                </div>
+
+                {/* Quick Shot Form */}
+                <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
+                  <div className="space-y-6">
+                    {/* Business Name Field - Front and Center */}
+                    <div>
+                      <label className="block text-white text-lg font-medium mb-3">
+                        🏢 Business Name *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Enter business name"
+                          value={businessName}
+                          onChange={(e) => setBusinessName(e.target.value)}
+                          onFocus={() => setShowSuggestions(businessSuggestions.length > 0)}
+                          className="w-full px-4 py-4 text-lg bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                        
+                        {/* Business Suggestions Dropdown */}
+                        {showSuggestions && (businessSuggestions.length > 0 || isLoadingSuggestions) && (
+                          <div className="absolute z-10 w-full mt-2 bg-black/90 backdrop-blur-md rounded-lg border border-white/20 max-h-64 overflow-y-auto">
+                            {isLoadingSuggestions ? (
+                              <div className="p-4 text-center text-white/70">
+                                🔍 Finding nearby businesses...
+                              </div>
+                            ) : (
+                              <>
+                                <div className="p-3 border-b border-white/20">
+                                  <div className="text-sm text-white/70 mb-2">📍 Nearby businesses based on GPS:</div>
+                                </div>
+                                {businessSuggestions.map((business, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => {
+                                      setBusinessName(business.name);
+                                      setShowSuggestions(false);
+                                    }}
+                                    className="w-full text-left p-3 hover:bg-white/10 transition-colors duration-300 border-b border-white/10 last:border-b-0"
+                                  >
+                                    <div className="text-white font-medium">{business.name}</div>
+                                    {business.address && (
+                                      <div className="text-white/60 text-sm">{business.address}</div>
+                                    )}
+                                    {business.rating && (
+                                      <div className="text-yellow-400 text-sm">⭐ {business.rating}</div>
+                                    )}
+                                  </button>
+                                ))}
+                                <div className="p-3 border-t border-white/20">
+                                  <button
+                                    onClick={() => setShowSuggestions(false)}
+                                    className="text-white/70 text-sm hover:text-white transition-colors duration-300"
+                                  >
+                                    ✏️ Or type custom business name
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {gpsData && businessSuggestions.length === 0 && !isLoadingSuggestions && (
+                        <div className="mt-2 text-sm text-white/60">
+                          📍 GPS captured but no businesses found nearby - you can enter any business name
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Image Capture */}
+                    <div className="space-y-4">
+                      <div className="flex space-x-4">
+                        <button
+                          onClick={() => fileInputRef.current.click()}
+                          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+                        >
+                          📁 Choose File
+                        </button>
+                        <button
+                          onClick={() => setIsFireExtinguisherCameraOpen(true)}
+                          className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-4 px-6 rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105"
+                        >
+                          📷 Take Photo
+                        </button>
+                      </div>
+                      
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+
+                      {/* Fire Extinguisher Camera Modal */}
+                      {isFireExtinguisherCameraOpen && (
+                        <FireExtinguisherCamera
+                          onExit={() => setIsFireExtinguisherCameraOpen(false)}
+                          onCapture={(imageData) => {
+                            setSelectedImage(imageData);
+                            setIsFireExtinguisherCameraOpen(false);
+                          }}
+                        />
+                      )}
+
+                      {/* Camera Test Modal (for debugging) */}
+                      {isTestingCamera && <CameraTest onExit={() => setIsTestingCamera(false)} />}
+                      
+                      <canvas ref={canvasRef} className="hidden" />
+
+                      {selectedImage && (
+                        <div className="mt-4">
+                          <img src={selectedImage} alt="Selected" className="max-w-full h-48 object-cover rounded-lg border border-white/20 mx-auto" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* GPS Section */}
+                    <div className="bg-black/20 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-white font-semibold">📍 GPS Location</h3>
+                        <button
+                          onClick={captureGPS}
+                          disabled={isCapturingGPS}
+                          className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded hover:bg-blue-500/30 transition-colors duration-300 disabled:opacity-50"
+                        >
+                          {isCapturingGPS ? '📡 Getting GPS...' : '📡 Capture GPS'}
+                        </button>
+                      </div>
+                      
+                      {gpsData && (
+                        <div className="text-sm text-green-400">
+                          ✅ GPS: {gpsData.latitude.toFixed(6)}, {gpsData.longitude.toFixed(6)} 
+                          <span className="text-white/60 ml-2">(±{Math.round(gpsData.accuracy)}m)</span>
+                        </div>
+                      )}
+                      
+                      {gpsError && (
+                        <div className="text-sm text-red-400">
+                          ❌ GPS Error: {gpsError}
+                        </div>
+                      )}
+                      
+                      {!gpsData && !gpsError && !isCapturingGPS && (
+                        <div className="text-sm text-white/60">
+                          Click "Capture GPS" to get location automatically
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      onClick={submitQuickShot}
+                      disabled={isSubmitting || !selectedImage || !businessName.trim()}
+                      className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-4 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-lg"
+                    >
+                      {isSubmitting ? '🚀 Submitting...' : '🚀 Submit & Go!'}
+                    </button>
+                    
+                    {!isSubmitting && (
+                      <p className="text-center text-white/60 text-sm">
+                        Submit immediately - processing happens in background
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-            */}
-
-            {/* Image Upload Section */}
-            <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            ) : (
+              /* Technician Mode Interface */
+              <div className="space-y-8">
+                {/* Image Upload Section */}
+                <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
               <h2 className="text-2xl font-bold text-white mb-6">Upload Fire Extinguisher Tag</h2>
               
               <div className="space-y-4">
@@ -1431,6 +1766,7 @@ const App = () => {
                         <th className="px-4 py-3 text-left font-semibold">Service Company</th>
                         <th className="px-4 py-3 text-left font-semibold">Equipment #</th>
                         <th className="px-4 py-3 text-left font-semibold">Service Type</th>
+                        <th className="px-4 py-3 text-left font-semibold">GPS Location</th>
                         <th className="px-4 py-3 text-left font-semibold">Status</th>
                         <th className="px-4 py-3 text-left font-semibold">Actions</th>
                       </tr>
@@ -1501,6 +1837,26 @@ const App = () => {
                               {parsed.service_details?.service_type && parsed.service_details.service_type !== 'unknown' 
                                 ? parsed.service_details.service_type 
                                 : 'N/A'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {(() => {
+                                if (inspection.gps_data) {
+                                  try {
+                                    const gps = typeof inspection.gps_data === 'string' ? JSON.parse(inspection.gps_data) : inspection.gps_data;
+                                    if (gps.latitude && gps.longitude) {
+                                      return (
+                                        <div className="text-xs">
+                                          <div className="text-green-400">📍 GPS</div>
+                                          <div className="text-white/60">{gps.latitude.toFixed(4)}, {gps.longitude.toFixed(4)}</div>
+                                        </div>
+                                      );
+                                    }
+                                  } catch (e) {
+                                    return <div className="text-xs text-white/60">GPS Captured</div>;
+                                  }
+                                }
+                                return <div className="text-xs text-white/40">No GPS</div>;
+                              })()}
                             </td>
                             <td className="px-4 py-3 text-sm">
                               <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
