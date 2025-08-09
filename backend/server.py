@@ -10,6 +10,7 @@ import base64
 import uuid
 import requests
 import asyncio
+import re
 from datetime import datetime, timedelta
 import litellm
 # Commented out emergentintegrations imports for deployment
@@ -231,11 +232,22 @@ def consolidate_analysis(
         any(keyword in raw_text.lower() for keyword in ["recharge", "service", "replace", "fail"])
     )
 
-    # Parse enhanced data (safely handle JSON responses)
+    # Parse enhanced data (safely handle JSON responses with markdown support)
     def safe_parse_json(text, fallback):
         if text == "unknown" or not text:
             return fallback
         try:
+            # Handle markdown code blocks
+            if text.startswith("```json") or text.startswith("```"):
+                # Extract JSON from markdown code block
+                json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
+                if json_match:
+                    text = json_match.group(1)
+                else:
+                    # Fallback for malformed markdown
+                    text = text.replace("```json", "").replace("```", "").strip()
+            
+            # Try to parse the cleaned text
             return json.loads(text)
         except (json.JSONDecodeError, TypeError):
             return fallback
