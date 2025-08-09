@@ -1,8 +1,8 @@
 # 🔥 Fire Safety Scanner
 
-**A lead generation and client retention engine for Pye Barker field technicians, powered by AI.**
+**A lead generation and client retention engine for Pye Barker field technicians, powered by AI with enhanced data capture for service company information, equipment numbers, and service details.**
 
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://scanner.hales.ai)
+[![Status](https://img.shields.io/badge/Status-Enhanced%20Data%20Capture%20Complete-brightgreen)](https://scanner.hales.ai)
 [![AI](https://img.shields.io/badge/AI-Gemini%202.5%20Pro-blue)](https://openrouter.ai)
 [![Database](https://img.shields.io/badge/Database-MongoDB-green)](https://mongodb.com)
 
@@ -25,7 +25,7 @@ Transform routine fire extinguisher inspections into strategic business activiti
 
 ### **✅ Fully Operational System**
 - **Frontend**: React application with camera functionality
-- **Backend**: FastAPI with 5-layer AI analysis pipeline
+- **Backend**: FastAPI with 8-layer enhanced AI analysis pipeline
 - **Database**: MongoDB with persistent inspection storage
 - **AI**: Gemini 2.5 Pro via OpenRouter for image analysis
 - **Domain**: HTTPS-secured at scanner.hales.ai
@@ -49,12 +49,15 @@ Transform routine fire extinguisher inspections into strategic business activiti
 - **Deployment**: Docker Compose + nginx + SSL
 - **Infrastructure**: Digital Ocean Droplet
 
-### **AI Analysis Pipeline**
+### **Enhanced AI Analysis Pipeline**
 1. **Layer 1**: OCR text extraction from inspection tag
 2. **Layer 2**: Parallel date analysis (Year/Month/Day)
 3. **Layer 3**: Parallel classification (Type/Condition)
-4. **Layer 4**: Consolidation into structured JSON
-5. **Output**: Actionable inspection data with confidence scores
+4. **Layer 4**: Service company information extraction (Name/Address/Phone/Website)
+5. **Layer 5**: Equipment number identification (AE#/HE#/EE#/FE#)
+6. **Layer 6**: Service details analysis (Inspection type/Additional services)
+7. **Layer 7**: Enhanced consolidation into structured JSON
+8. **Output**: Comprehensive inspection data with service company info, equipment numbers, and confidence scores
 
 ---
 
@@ -127,7 +130,7 @@ N8N_WEBHOOK_URL="https://automate.hales.ai/webhook/[webhook-id]"
 
 ### **Key Features**
 - **Camera Integration**: Native browser camera API with fire extinguisher tag overlay
-- **AI Analysis**: Real-time Gemini 2.5 Pro image analysis
+- **Enhanced AI Analysis**: Real-time Gemini 2.5 Pro image analysis with service company, equipment, and service detail extraction
 - **Data Persistence**: MongoDB with inspection history
 - **Responsive Design**: Mobile-first interface for field technicians
 - **Secure Access**: HTTPS with SSL certificates
@@ -171,7 +174,7 @@ ssh root@134.199.239.171 "cd projects/fire-safety-scanner && [your-command]"
 
 1. **Access Application**: Navigate to https://scanner.hales.ai
 2. **Capture Image**: Use camera to photograph fire extinguisher tag
-3. **AI Analysis**: Gemini automatically extracts inspection data
+3. **Enhanced AI Analysis**: Gemini automatically extracts inspection data, service company information, equipment numbers, and service details
 4. **Review Results**: Verify AI analysis accuracy
 5. **Submit Inspection**: Save to database with location notes
 6. **View History**: Access previous inspections and due dates

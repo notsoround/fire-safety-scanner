@@ -1,14 +1,14 @@
 # 🚀 Fire Safety Scanner - Production Deployment Status
 
-**Last Updated**: August 4, 2025  
-**Status**: ✅ **FULLY OPERATIONAL**
+**Last Updated**: January 27, 2025  
+**Status**: ✅ **FULLY OPERATIONAL WITH ENHANCED DATA CAPTURE**
 
 ## 🎯 **CURRENT PRODUCTION STATUS**
 
 ### **✅ LIVE SYSTEM METRICS**
 - **Domain**: https://scanner.hales.ai (SSL Enabled)
 - **Server**: Digital Ocean Droplet (134.199.239.171)
-- **Database**: 5+ inspections stored and retrievable
+- **Database**: Enhanced inspection data with service company info, equipment numbers, and service details
 - **AI Analysis**: Gemini 2.5 Pro providing real analysis responses
 - **Uptime**: All containers running and healthy
 
@@ -33,7 +33,7 @@
 ### **AI Model Configuration**
 - **Model**: `openrouter/google/gemini-2.5-pro`
 - **Provider**: OpenRouter
-- **Analysis Pipeline**: 5-layer parallel processing (OCR → Date/Type/Condition → Consolidation)
+- **Analysis Pipeline**: 8-layer parallel processing (OCR → Date/Type/Condition → Service Company/Equipment/Service Details → Consolidation)
 
 ### **Container Architecture**
 - **App Container**: FastAPI + React (ports 8080:80, 8001:8001)
@@ -62,8 +62,8 @@ curl -X POST http://localhost:8001/api/inspections -H 'Content-Type: application
 The Fire Safety Scanner is **fully operational** and ready for field technicians to:
 
 1. **Upload fire extinguisher tag images** via camera or file upload
-2. **Receive AI-powered analysis** from Gemini 2.5 Pro
-3. **Store inspection data** in persistent MongoDB database
+2. **Receive enhanced AI-powered analysis** from Gemini 2.5 Pro including service company info, equipment numbers, and service details
+3. **Store comprehensive inspection data** in persistent MongoDB database with enhanced data fields
 4. **View inspection history** in responsive React frontend
 5. **Access securely** via HTTPS domain
 
