@@ -30,7 +30,7 @@ const App = () => {
 
   // CSV Export Functions
   const generateCSV = () => {
-    const headers = ['Date', 'Location', 'Type', 'Condition', 'Last Inspection', 'Next Due', 'Status', 'Notes'];
+    const headers = ['Date', 'Location', 'Type', 'Condition', 'Last Inspection', 'Next Due', 'Service Company', 'Company Phone', 'Equipment Numbers', 'Service Type', 'Status', 'Notes'];
     const csvRows = [headers.join(',')];
 
     inspections.forEach(inspection => {
@@ -48,6 +48,23 @@ const App = () => {
         parsed = {};
       }
 
+      // Format equipment numbers for CSV
+      const equipmentNumbers = [];
+      if (parsed.equipment_numbers) {
+        if (parsed.equipment_numbers.ae_number && parsed.equipment_numbers.ae_number !== 'unknown') {
+          equipmentNumbers.push(`AE:${parsed.equipment_numbers.ae_number}`);
+        }
+        if (parsed.equipment_numbers.he_number && parsed.equipment_numbers.he_number !== 'unknown') {
+          equipmentNumbers.push(`HE:${parsed.equipment_numbers.he_number}`);
+        }
+        if (parsed.equipment_numbers.ee_number && parsed.equipment_numbers.ee_number !== 'unknown') {
+          equipmentNumbers.push(`EE:${parsed.equipment_numbers.ee_number}`);
+        }
+        if (parsed.equipment_numbers.fe_number && parsed.equipment_numbers.fe_number !== 'unknown') {
+          equipmentNumbers.push(`FE:${parsed.equipment_numbers.fe_number}`);
+        }
+      }
+
       const row = [
         new Date(inspection.inspection_date).toLocaleDateString(),
         `"${inspection.location}"`,
@@ -55,6 +72,10 @@ const App = () => {
         `"${parsed.condition || 'N/A'}"`,
         `"${parsed.last_inspection_date ? formatDate(parsed.last_inspection_date) : 'N/A'}"`,
         `"${parsed.next_due_date ? formatDate(parsed.next_due_date) : 'N/A'}"`,
+        `"${parsed.service_company?.name && parsed.service_company.name !== 'unknown' ? parsed.service_company.name : 'N/A'}"`,
+        `"${parsed.service_company?.phone && parsed.service_company.phone !== 'unknown' ? parsed.service_company.phone : 'N/A'}"`,
+        `"${equipmentNumbers.length > 0 ? equipmentNumbers.join(' | ') : 'N/A'}"`,
+        `"${parsed.service_details?.service_type && parsed.service_details.service_type !== 'unknown' ? parsed.service_details.service_type : 'N/A'}"`,
         `"${inspection.status}"`,
         `"${inspection.notes || parsed.maintenance_notes || 'N/A'}"`
       ];
@@ -1407,6 +1428,9 @@ const App = () => {
                         <th className="px-4 py-3 text-left font-semibold">Condition</th>
                         <th className="px-4 py-3 text-left font-semibold">Last Inspection</th>
                         <th className="px-4 py-3 text-left font-semibold">Next Due</th>
+                        <th className="px-4 py-3 text-left font-semibold">Service Company</th>
+                        <th className="px-4 py-3 text-left font-semibold">Equipment #</th>
+                        <th className="px-4 py-3 text-left font-semibold">Service Type</th>
                         <th className="px-4 py-3 text-left font-semibold">Status</th>
                         <th className="px-4 py-3 text-left font-semibold">Actions</th>
                       </tr>
@@ -1440,6 +1464,43 @@ const App = () => {
                             </td>
                             <td className="px-4 py-3 text-sm">
                               {parsed.next_due_date ? formatDate(parsed.next_due_date) : 'N/A'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {parsed.service_company?.name && parsed.service_company.name !== 'unknown' ? (
+                                <div className="text-xs">
+                                  <div className="font-medium">{parsed.service_company.name}</div>
+                                  {parsed.service_company.phone && parsed.service_company.phone !== 'unknown' && (
+                                    <div className="text-white/60">{parsed.service_company.phone}</div>
+                                  )}
+                                </div>
+                              ) : 'N/A'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {parsed.equipment_numbers ? (
+                                <div className="text-xs">
+                                  {parsed.equipment_numbers.ae_number && parsed.equipment_numbers.ae_number !== 'unknown' && (
+                                    <div>AE: {parsed.equipment_numbers.ae_number}</div>
+                                  )}
+                                  {parsed.equipment_numbers.he_number && parsed.equipment_numbers.he_number !== 'unknown' && (
+                                    <div>HE: {parsed.equipment_numbers.he_number}</div>
+                                  )}
+                                  {parsed.equipment_numbers.ee_number && parsed.equipment_numbers.ee_number !== 'unknown' && (
+                                    <div>EE: {parsed.equipment_numbers.ee_number}</div>
+                                  )}
+                                  {parsed.equipment_numbers.fe_number && parsed.equipment_numbers.fe_number !== 'unknown' && (
+                                    <div>FE: {parsed.equipment_numbers.fe_number}</div>
+                                  )}
+                                  {(!parsed.equipment_numbers.ae_number || parsed.equipment_numbers.ae_number === 'unknown') &&
+                                   (!parsed.equipment_numbers.he_number || parsed.equipment_numbers.he_number === 'unknown') &&
+                                   (!parsed.equipment_numbers.ee_number || parsed.equipment_numbers.ee_number === 'unknown') &&
+                                   (!parsed.equipment_numbers.fe_number || parsed.equipment_numbers.fe_number === 'unknown') && 'N/A'}
+                                </div>
+                              ) : 'N/A'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {parsed.service_details?.service_type && parsed.service_details.service_type !== 'unknown' 
+                                ? parsed.service_details.service_type 
+                                : 'N/A'}
                             </td>
                             <td className="px-4 py-3 text-sm">
                               <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
