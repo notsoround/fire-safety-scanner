@@ -836,6 +836,36 @@ const App = () => {
           {/* Mobile Navigation Menu */}
           {isMobileMenuOpen && (
             <div className="md:hidden mt-4 pb-4 border-t border-white/10 pt-4">
+              {/* Mobile Mode Toggle */}
+              <div className="flex bg-white/10 rounded-lg p-1 mb-4">
+                <button
+                  onClick={() => {
+                    setIsQuickShotMode(false);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`flex-1 px-3 py-2 rounded text-sm transition-all duration-300 ${
+                    !isQuickShotMode
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  🔧 Technician
+                </button>
+                <button
+                  onClick={() => {
+                    setIsQuickShotMode(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`flex-1 px-3 py-2 rounded text-sm transition-all duration-300 ${
+                    isQuickShotMode
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  ⚡ Quick Shot
+                </button>
+              </div>
+              
               <nav className="flex flex-col space-y-2">
                 <button
                   onClick={() => {
