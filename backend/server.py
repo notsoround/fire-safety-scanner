@@ -100,7 +100,7 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
         print(f"🖼️ Image URL length: {len(data_url)}")
         
         # Use OpenRouter Gemini 2.5 Pro by default; can be overridden via MODEL_ID
-        model_id = os.getenv("MODEL_ID", "google/gemini-2.5-pro")
+        model_id = os.getenv("MODEL_ID", "openrouter/google/gemini-2.5-pro")
         request_timeout = int(os.getenv("LLM_TIMEOUT", "240"))
         response = await litellm.acompletion(
             model=model_id,
@@ -134,7 +134,7 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
         return result
     except Exception as e:
         # Enhanced error logging for debugging
-        print(f"❌ AI Analysis Error - Model: {os.getenv('MODEL_ID', 'openrouter/openai/gpt-5')}")
+        print(f"❌ AI Analysis Error - Model: {os.getenv('MODEL_ID', 'openrouter/google/gemini-2.5-pro')}")
         print(f"❌ AI Analysis Error - API Key: {OPENROUTER_API_KEY[:20]}...")
         print(f"❌ AI Analysis Error - Error Type: {type(e).__name__}")
         print(f"❌ AI Analysis Error - Full Error: {str(e)}")
