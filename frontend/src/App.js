@@ -874,14 +874,86 @@ const App = () => {
                 <h3 className="text-xl font-bold text-white mb-4">Analysis Result</h3>
                 <div className="bg-black/20 rounded-lg p-4 text-white/80">
                   {typeof inspectionResult.analysis === 'object' ? (
-                    <div className="space-y-2 text-sm">
-                      {inspectionResult.analysis.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(inspectionResult.analysis.last_inspection_date)}</div>}
-                      {inspectionResult.analysis.next_due_date && <div><strong>Next Due:</strong> {formatDate(inspectionResult.analysis.next_due_date)}</div>}
-                      {inspectionResult.analysis.extinguisher_type && <div><strong>Type:</strong> {inspectionResult.analysis.extinguisher_type}</div>}
-                      {inspectionResult.analysis.condition && <div><strong>Condition:</strong> {inspectionResult.analysis.condition}</div>}
-                      {inspectionResult.analysis.maintenance_notes && <div><strong>Notes:</strong> {inspectionResult.analysis.maintenance_notes}</div>}
-                      {inspectionResult.analysis.requires_attention !== undefined && (
-                        <div><strong>Requires Attention:</strong> {inspectionResult.analysis.requires_attention ? 'Yes' : 'No'}</div>
+                    <div className="space-y-4">
+                      {/* Inspection Details Section */}
+                      <div className="border-b border-white/20 pb-3">
+                        <h4 className="text-sm font-semibold text-white/90 mb-2">📋 Inspection Details</h4>
+                        <div className="space-y-1 text-sm">
+                          {inspectionResult.analysis.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(inspectionResult.analysis.last_inspection_date)}</div>}
+                          {inspectionResult.analysis.next_due_date && <div><strong>Next Due:</strong> {formatDate(inspectionResult.analysis.next_due_date)}</div>}
+                          {inspectionResult.analysis.condition && <div><strong>Condition:</strong> {inspectionResult.analysis.condition}</div>}
+                          {inspectionResult.analysis.requires_attention !== undefined && (
+                            <div><strong>Requires Attention:</strong> {inspectionResult.analysis.requires_attention ? 'Yes' : 'No'}</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Equipment Information Section */}
+                      <div className="border-b border-white/20 pb-3">
+                        <h4 className="text-sm font-semibold text-white/90 mb-2">🧯 Equipment Information</h4>
+                        <div className="space-y-1 text-sm">
+                          {inspectionResult.analysis.extinguisher_type && <div><strong>Type:</strong> {inspectionResult.analysis.extinguisher_type}</div>}
+                          {inspectionResult.analysis.equipment_numbers && (
+                            <div className="space-y-1">
+                              {inspectionResult.analysis.equipment_numbers.ae_number && inspectionResult.analysis.equipment_numbers.ae_number !== 'unknown' && (
+                                <div><strong>AE#:</strong> {inspectionResult.analysis.equipment_numbers.ae_number}</div>
+                              )}
+                              {inspectionResult.analysis.equipment_numbers.he_number && inspectionResult.analysis.equipment_numbers.he_number !== 'unknown' && (
+                                <div><strong>HE#:</strong> {inspectionResult.analysis.equipment_numbers.he_number}</div>
+                              )}
+                              {inspectionResult.analysis.equipment_numbers.ee_number && inspectionResult.analysis.equipment_numbers.ee_number !== 'unknown' && (
+                                <div><strong>EE#:</strong> {inspectionResult.analysis.equipment_numbers.ee_number}</div>
+                              )}
+                              {inspectionResult.analysis.equipment_numbers.fe_number && inspectionResult.analysis.equipment_numbers.fe_number !== 'unknown' && (
+                                <div><strong>FE#:</strong> {inspectionResult.analysis.equipment_numbers.fe_number}</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Service Company Section */}
+                      {inspectionResult.analysis.service_company && (
+                        <div className="border-b border-white/20 pb-3">
+                          <h4 className="text-sm font-semibold text-white/90 mb-2">🏢 Service Company</h4>
+                          <div className="space-y-1 text-sm">
+                            {inspectionResult.analysis.service_company.name && inspectionResult.analysis.service_company.name !== 'unknown' && (
+                              <div><strong>Company:</strong> {inspectionResult.analysis.service_company.name}</div>
+                            )}
+                            {inspectionResult.analysis.service_company.address && inspectionResult.analysis.service_company.address !== 'unknown' && (
+                              <div><strong>Address:</strong> {inspectionResult.analysis.service_company.address}</div>
+                            )}
+                            {inspectionResult.analysis.service_company.phone && inspectionResult.analysis.service_company.phone !== 'unknown' && (
+                              <div><strong>Phone:</strong> {inspectionResult.analysis.service_company.phone}</div>
+                            )}
+                            {inspectionResult.analysis.service_company.website && inspectionResult.analysis.service_company.website !== 'unknown' && (
+                              <div><strong>Website:</strong> {inspectionResult.analysis.service_company.website}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Service Details Section */}
+                      {inspectionResult.analysis.service_details && (
+                        <div className="border-b border-white/20 pb-3">
+                          <h4 className="text-sm font-semibold text-white/90 mb-2">🔧 Service Details</h4>
+                          <div className="space-y-1 text-sm">
+                            {inspectionResult.analysis.service_details.service_type && inspectionResult.analysis.service_details.service_type !== 'unknown' && (
+                              <div><strong>Service Type:</strong> {inspectionResult.analysis.service_details.service_type}</div>
+                            )}
+                            {inspectionResult.analysis.service_details.additional_services && inspectionResult.analysis.service_details.additional_services.length > 0 && (
+                              <div><strong>Additional Services:</strong> {inspectionResult.analysis.service_details.additional_services.join(', ')}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Notes Section */}
+                      {inspectionResult.analysis.maintenance_notes && (
+                        <div className="pt-2">
+                          <h4 className="text-sm font-semibold text-white/90 mb-2">📝 Notes</h4>
+                          <div className="text-sm">{inspectionResult.analysis.maintenance_notes}</div>
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -1087,14 +1159,62 @@ const App = () => {
                               }
 
                               return (
-                                  <div className="space-y-2">
-                                      {parsed.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(parsed.last_inspection_date)}</div>}
-                                      {parsed.next_due_date && <div><strong>Next Due:</strong> {formatDate(parsed.next_due_date)}</div>}
-                                      {parsed.extinguisher_type && <div><strong>Type:</strong> {parsed.extinguisher_type}</div>}
-                                      {parsed.condition && <div><strong>Condition:</strong> {parsed.condition}</div>}
-                                      {parsed.maintenance_notes && <div><strong>Notes:</strong> {parsed.maintenance_notes}</div>}
-                                      {parsed.requires_attention !== undefined && (
-                                          <div><strong>Requires Attention:</strong> {parsed.requires_attention ? 'Yes' : 'No'}</div>
+                                  <div className="space-y-3">
+                                      {/* Inspection Details */}
+                                      <div className="border-b border-white/20 pb-2">
+                                          <div className="text-xs font-semibold text-white/90 mb-1">📋 INSPECTION</div>
+                                          {parsed.last_inspection_date && <div><strong>Last:</strong> {formatDate(parsed.last_inspection_date)}</div>}
+                                          {parsed.next_due_date && <div><strong>Due:</strong> {formatDate(parsed.next_due_date)}</div>}
+                                          {parsed.condition && <div><strong>Condition:</strong> {parsed.condition}</div>}
+                                          {parsed.requires_attention !== undefined && (
+                                              <div><strong>Attention:</strong> {parsed.requires_attention ? 'Yes' : 'No'}</div>
+                                          )}
+                                      </div>
+
+                                      {/* Equipment Info */}
+                                      <div className="border-b border-white/20 pb-2">
+                                          <div className="text-xs font-semibold text-white/90 mb-1">🧯 EQUIPMENT</div>
+                                          {parsed.extinguisher_type && <div><strong>Type:</strong> {parsed.extinguisher_type}</div>}
+                                          {parsed.equipment_numbers && (
+                                              <div className="grid grid-cols-2 gap-1 text-xs">
+                                                  {parsed.equipment_numbers.ae_number && parsed.equipment_numbers.ae_number !== 'unknown' && (
+                                                      <div><strong>AE#:</strong> {parsed.equipment_numbers.ae_number}</div>
+                                                  )}
+                                                  {parsed.equipment_numbers.he_number && parsed.equipment_numbers.he_number !== 'unknown' && (
+                                                      <div><strong>HE#:</strong> {parsed.equipment_numbers.he_number}</div>
+                                                  )}
+                                                  {parsed.equipment_numbers.ee_number && parsed.equipment_numbers.ee_number !== 'unknown' && (
+                                                      <div><strong>EE#:</strong> {parsed.equipment_numbers.ee_number}</div>
+                                                  )}
+                                                  {parsed.equipment_numbers.fe_number && parsed.equipment_numbers.fe_number !== 'unknown' && (
+                                                      <div><strong>FE#:</strong> {parsed.equipment_numbers.fe_number}</div>
+                                                  )}
+                                              </div>
+                                          )}
+                                      </div>
+
+                                      {/* Service Company */}
+                                      {parsed.service_company && (parsed.service_company.name !== 'unknown' || parsed.service_company.phone !== 'unknown') && (
+                                          <div className="border-b border-white/20 pb-2">
+                                              <div className="text-xs font-semibold text-white/90 mb-1">🏢 SERVICE</div>
+                                              {parsed.service_company.name && parsed.service_company.name !== 'unknown' && (
+                                                  <div><strong>Company:</strong> {parsed.service_company.name}</div>
+                                              )}
+                                              {parsed.service_company.phone && parsed.service_company.phone !== 'unknown' && (
+                                                  <div><strong>Phone:</strong> {parsed.service_company.phone}</div>
+                                              )}
+                                              {parsed.service_details && parsed.service_details.service_type && parsed.service_details.service_type !== 'unknown' && (
+                                                  <div><strong>Type:</strong> {parsed.service_details.service_type}</div>
+                                              )}
+                                          </div>
+                                      )}
+
+                                      {/* Notes */}
+                                      {parsed.maintenance_notes && (
+                                          <div className="pt-1">
+                                              <div className="text-xs font-semibold text-white/90 mb-1">📝 NOTES</div>
+                                              <div>{parsed.maintenance_notes}</div>
+                                          </div>
                                       )}
                                   </div>
                               );

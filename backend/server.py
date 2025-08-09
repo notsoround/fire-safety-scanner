@@ -171,9 +171,25 @@ async def analyze_condition(raw_text: str, data_url: str) -> str:
     prompt = f"This is a fire extinguisher inspection tag. Based on the inspection information, assess the overall condition. Look for any indicators of problems, maintenance needs, or good condition. From this text: '{raw_text}' and the image, what is the overall CONDITION? Respond with only 'Good', 'Fair', 'Poor', or 'unknown'."
     return await analyze_image_layer(prompt, data_url)
 
+async def analyze_company_info(raw_text: str, data_url: str) -> str:
+    """Layer 3c: Extracts service company information."""
+    prompt = f"This is a fire extinguisher inspection tag. Look for the service company information including company name, address, phone number, and website. From this text: '{raw_text}' and the image, extract the COMPANY INFO. Respond with a JSON object like {{'name': 'Company Name', 'address': 'Full Address', 'phone': 'Phone Number', 'website': 'Website'}} or 'unknown' if not found."
+    return await analyze_image_layer(prompt, data_url)
+
+async def analyze_equipment_numbers(raw_text: str, data_url: str) -> str:
+    """Layer 3d: Extracts equipment identification numbers."""
+    prompt = f"This is a fire extinguisher inspection tag. Look for equipment identification numbers like AE#, HE#, EE#, FE# or similar asset/equipment numbers. From this text: '{raw_text}' and the image, extract the EQUIPMENT NUMBERS. Respond with a JSON object like {{'ae_number': 'value', 'he_number': 'value', 'ee_number': 'value', 'fe_number': 'value'}} or 'unknown' if not found."
+    return await analyze_image_layer(prompt, data_url)
+
+async def analyze_service_details(raw_text: str, data_url: str) -> str:
+    """Layer 3e: Extracts service type and details performed."""
+    prompt = f"This is a fire extinguisher inspection tag. Look for service type checkboxes or markings like ANNUAL INSP, SEMI ANNUAL INSP, QUARTERLY INSP, REPAIR, RECHARGE, NEW INSTALL, HYDRO, F/A, P/A, C/A, etc. From this text: '{raw_text}' and the image, extract the SERVICE DETAILS. Respond with a JSON object like {{'service_type': 'Annual Inspection', 'additional_services': ['Recharge', 'Repair']}} or 'unknown' if not found."
+    return await analyze_image_layer(prompt, data_url)
+
 def consolidate_analysis(
     year: str, month: str, day: str,
     extinguisher_type: str, condition: str,
+    company_info: str, equipment_numbers: str, service_details: str,
     raw_text: str
 ) -> dict:
     """Layer 4: Consolidates results into the final JSON object."""
@@ -215,12 +231,25 @@ def consolidate_analysis(
         any(keyword in raw_text.lower() for keyword in ["recharge", "service", "replace", "fail"])
     )
 
+    # Parse enhanced data (safely handle JSON responses)
+    def safe_parse_json(text, fallback):
+        if text == "unknown" or not text:
+            return fallback
+        try:
+            return json.loads(text)
+        except (json.JSONDecodeError, TypeError):
+            return fallback
+
+    company_data = safe_parse_json(company_info, {"name": "unknown", "address": "unknown", "phone": "unknown", "website": "unknown"})
+    equipment_data = safe_parse_json(equipment_numbers, {"ae_number": "unknown", "he_number": "unknown", "ee_number": "unknown", "fe_number": "unknown"})
+    service_data = safe_parse_json(service_details, {"service_type": "unknown", "additional_services": []})
+
     # Calculate confidence score (simple heuristic)
     fields = [year, month, day, extinguisher_type, condition]
     valid_fields = sum(1 for f in fields if f and f != "error" and f.lower() != 'null' and f.lower() != 'n/a')
     confidence_score = valid_fields / len(fields)
 
-    # Assemble final JSON
+    # Assemble final JSON with enhanced data
     final_json = {
         "last_inspection_date": {
             "year": year_int,
@@ -234,7 +263,11 @@ def consolidate_analysis(
         "requires_attention": requires_attention,
         "maintenance_notes": "", # Placeholder, can be a separate analysis layer if needed
         "confidence_score": round(confidence_score, 2),
-        "raw_text_analysis": raw_text
+        "raw_text_analysis": raw_text,
+        # Enhanced data fields
+        "service_company": company_data,
+        "equipment_numbers": equipment_data,
+        "service_details": service_data
     }
     return final_json
     
@@ -423,25 +456,32 @@ async def create_inspection(
         # Layer 1: OCR
         raw_text = await extract_raw_text(data_url)
 
-        # Layer 2 & 3: Parallel Analysis
+        # Layer 2 & 3: Parallel Analysis (Enhanced)
         year_task = analyze_year(raw_text, data_url)
         month_task = analyze_month(raw_text, data_url)
         day_task = analyze_day(raw_text, data_url)
         type_task = analyze_extinguisher_type(raw_text, data_url)
         condition_task = analyze_condition(raw_text, data_url)
+        company_task = analyze_company_info(raw_text, data_url)
+        equipment_task = analyze_equipment_numbers(raw_text, data_url)
+        service_task = analyze_service_details(raw_text, data_url)
 
         results = await asyncio.gather(
-            year_task, month_task, day_task, type_task, condition_task
+            year_task, month_task, day_task, type_task, condition_task,
+            company_task, equipment_task, service_task
         )
-        year, month, day, extinguisher_type, condition = results
+        year, month, day, extinguisher_type, condition, company_info, equipment_numbers, service_details = results
 
-        # Layer 4: Consolidation
+        # Layer 4: Consolidation (Enhanced)
         final_analysis_json = consolidate_analysis(
             year=year,
             month=month,
             day=day,
             extinguisher_type=extinguisher_type,
             condition=condition,
+            company_info=company_info,
+            equipment_numbers=equipment_numbers,
+            service_details=service_details,
             raw_text=raw_text
         )
         
