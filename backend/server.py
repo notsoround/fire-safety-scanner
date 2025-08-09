@@ -44,6 +44,7 @@ inspections_collection = db["inspections"]
 # Environment variables
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL")
+GOOGLE_PLACES_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY")
 
 # Models
 class User(BaseModel):
@@ -62,6 +63,8 @@ class InspectionRequest(BaseModel):
     image_base64: str
     location: str
     notes: Optional[str] = None
+    gps_data: Optional[Dict[str, Any]] = None
+    business_name: Optional[str] = None
 
 class InspectionResult(BaseModel):
     id: str
@@ -517,6 +520,16 @@ async def create_inspection(
             "created_at": datetime.utcnow()
         }
         
+        # Add GPS data if provided (Quick Shot mode)
+        if inspection_request.gps_data:
+            inspection["gps_data"] = inspection_request.gps_data
+            print(f"📍 GPS data saved: {inspection_request.gps_data}")
+            
+        # Add business name if provided (Quick Shot mode)
+        if inspection_request.business_name:
+            inspection["business_name"] = inspection_request.business_name
+            print(f"🏢 Business name saved: {inspection_request.business_name}")
+        
         print(f"💾 Attempting to save to database...")
         
         # Extract due date from the structured JSON for alerts
@@ -739,6 +752,91 @@ async def get_due_inspections():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+
+@app.get("/api/places/nearby")
+async def get_nearby_places(lat: float, lng: float, radius: int = 1000):
+    """
+    Get nearby businesses using Google Places API based on GPS coordinates.
+    """
+    try:
+        if not GOOGLE_PLACES_API_KEY:
+            # Return mock data if no API key is configured
+            print("⚠️ No Google Places API key configured, returning mock data")
+            return {
+                "success": True,
+                "places": [
+                    {
+                        "name": "ABC Fire Safety Services",
+                        "address": "123 Safety St, Business District",
+                        "rating": 4.5,
+                        "place_id": "mock_place_1",
+                        "types": ["fire_safety", "business"]
+                    },
+                    {
+                        "name": "Professional Fire Protection",
+                        "address": "456 Protection Ave, Industrial Area", 
+                        "rating": 4.2,
+                        "place_id": "mock_place_2",
+                        "types": ["fire_safety", "business"]
+                    },
+                    {
+                        "name": "Metro Business Center",
+                        "address": "789 Commerce Blvd, Downtown",
+                        "rating": 4.0,
+                        "place_id": "mock_place_3",
+                        "types": ["business", "office_building"]
+                    }
+                ]
+            }
+        
+        # Google Places Nearby Search API
+        url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+        params = {
+            'location': f"{lat},{lng}",
+            'radius': radius,
+            'type': 'establishment',  # General business establishments
+            'key': GOOGLE_PLACES_API_KEY
+        }
+        
+        response = requests.get(url, params=params)
+        
+        if response.status_code != 200:
+            print(f"❌ Google Places API error: {response.status_code}")
+            raise HTTPException(status_code=500, detail="Google Places API error")
+        
+        data = response.json()
+        
+        if data.get('status') != 'OK':
+            print(f"❌ Google Places API status: {data.get('status')}")
+            if data.get('status') == 'ZERO_RESULTS':
+                return {"success": True, "places": []}
+            raise HTTPException(status_code=500, detail=f"Google Places API: {data.get('status')}")
+        
+        # Process and filter results
+        places = []
+        for place in data.get('results', []):
+            if place.get('business_status') == 'OPERATIONAL':
+                places.append({
+                    "name": place.get('name', 'Unknown Business'),
+                    "address": place.get('vicinity', 'Address not available'),
+                    "rating": place.get('rating', 0),
+                    "place_id": place.get('place_id'),
+                    "types": place.get('types', [])
+                })
+        
+        # Sort by rating (highest first) and limit to top 10
+        places.sort(key=lambda x: x['rating'], reverse=True)
+        places = places[:10]
+        
+        print(f"✅ Found {len(places)} nearby businesses")
+        return {"success": True, "places": places}
+        
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Network error calling Google Places API: {str(e)}")
+        raise HTTPException(status_code=500, detail="Network error accessing Google Places API")
+    except Exception as e:
+        print(f"❌ Error in get_nearby_places: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/health")
 async def health_check():
