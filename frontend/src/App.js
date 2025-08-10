@@ -28,6 +28,9 @@ const App = () => {
   
   // Quick Shot Mode State
   const [isQuickShotMode, setIsQuickShotMode] = useState(false);
+  const [submittedBy, setSubmittedBy] = useState('');
+  const [offlineQueue, setOfflineQueue] = useState([]);
+  const [isProcessingOffline, setIsProcessingOffline] = useState(false);
   const [businessName, setBusinessName] = useState('');
   const [gpsData, setGpsData] = useState(null);
   const [isCapturingGPS, setIsCapturingGPS] = useState(false);
@@ -158,6 +161,40 @@ const App = () => {
       loadDueInspections();
     }
   }, [user]);
+
+  // Load offline queue on startup and set up connection monitoring
+  useEffect(() => {
+    loadOfflineQueue();
+    
+    // Process offline queue when app loads (in case we're back online)
+    const processOnStartup = () => {
+      setTimeout(() => {
+        if (navigator.onLine) {
+          processOfflineQueue();
+        }
+      }, 2000); // Wait 2 seconds for app to fully load
+    };
+    
+    processOnStartup();
+    
+    // Listen for online/offline events
+    const handleOnline = () => {
+      console.log('📡 Connection restored, processing offline queue...');
+      processOfflineQueue();
+    };
+    
+    const handleOffline = () => {
+      console.log('📱 Connection lost, submissions will be queued offline');
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
 
   const checkSession = async () => {
@@ -437,6 +474,95 @@ const App = () => {
     }
   };
 
+  // Offline Storage Functions
+  const saveToOfflineQueue = (submissionData) => {
+    try {
+      const queue = JSON.parse(localStorage.getItem('offlineSubmissions') || '[]');
+      const queueItem = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        data: submissionData,
+        retries: 0,
+        maxRetries: 3
+      };
+      queue.push(queueItem);
+      localStorage.setItem('offlineSubmissions', JSON.stringify(queue));
+      setOfflineQueue(queue);
+      console.log('💾 Saved submission to offline queue');
+    } catch (error) {
+      console.error('Failed to save to offline queue:', error);
+    }
+  };
+
+  const processOfflineQueue = async () => {
+    if (isProcessingOffline) return;
+    
+    try {
+      setIsProcessingOffline(true);
+      const queue = JSON.parse(localStorage.getItem('offlineSubmissions') || '[]');
+      
+      if (queue.length === 0) {
+        setOfflineQueue([]);
+        return;
+      }
+      
+      console.log(`📡 Processing ${queue.length} offline submissions...`);
+      const sessionToken = localStorage.getItem('session_token');
+      const remainingQueue = [];
+      
+      for (const item of queue) {
+        try {
+          const response = await fetch(`${backendUrl}/api/inspections`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'session-token': sessionToken
+            },
+            body: JSON.stringify(item.data)
+          });
+          
+          if (response.ok) {
+            console.log(`✅ Successfully uploaded offline submission ${item.id}`);
+          } else {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        } catch (error) {
+          console.log(`❌ Failed to upload submission ${item.id}, retry ${item.retries + 1}/${item.maxRetries}`);
+          item.retries += 1;
+          
+          if (item.retries < item.maxRetries) {
+            remainingQueue.push(item);
+          } else {
+            console.log(`🗑️ Dropping submission ${item.id} after ${item.maxRetries} retries`);
+          }
+        }
+      }
+      
+      localStorage.setItem('offlineSubmissions', JSON.stringify(remainingQueue));
+      setOfflineQueue(remainingQueue);
+      
+      if (remainingQueue.length === 0) {
+        console.log('🎉 All offline submissions processed successfully!');
+        loadInspections(); // Refresh the list
+      }
+      
+    } catch (error) {
+      console.error('Error processing offline queue:', error);
+    } finally {
+      setIsProcessingOffline(false);
+    }
+  };
+
+  const loadOfflineQueue = () => {
+    try {
+      const queue = JSON.parse(localStorage.getItem('offlineSubmissions') || '[]');
+      setOfflineQueue(queue);
+    } catch (error) {
+      console.error('Failed to load offline queue:', error);
+      setOfflineQueue([]);
+    }
+  };
+
   // Quick Shot Submission
   const submitQuickShot = async () => {
     if (!selectedImage || !businessName.trim()) {
@@ -454,9 +580,10 @@ const App = () => {
         image_base64: imageBase64,
         business_name: businessName.trim(),
         location: businessName.trim(), // Use business name as location for now
-        notes: `Quick Shot mode submission${gpsData ? ` - GPS: ${gpsData.latitude}, ${gpsData.longitude}` : ''}`,
+        notes: `Quick Shot mode submission${gpsData ? ` - GPS: ${gpsData.latitude}, ${gpsData.longitude}` : ''}${submittedBy ? ` - Submitted by: ${submittedBy}` : ''}`,
         mode: 'quick_shot',
         gps_data: gpsData,
+        submitted_by: submittedBy.trim() || 'Anonymous',
         timestamp: new Date().toISOString(),
         source: 'mobile_camera'
       };
@@ -475,6 +602,7 @@ const App = () => {
         alert('✅ Submitted successfully! Processing in background...');
         setSelectedImage(null);
         setBusinessName('');
+        setSubmittedBy('');
         setGpsData(null);
         setGpsError(null);
         loadInspections();
@@ -484,7 +612,18 @@ const App = () => {
       
     } catch (error) {
       console.error('Quick Shot submission failed:', error);
-      alert('❌ Submission failed. Please try again.');
+      
+      // Save to offline queue if network request failed
+      console.log('💾 Saving to offline queue due to network error...');
+      saveToOfflineQueue(submissionData);
+      alert('📱 No internet connection. Submission saved offline and will be uploaded when connection is restored.');
+      
+      // Clear the form even though it's offline
+      setSelectedImage(null);
+      setBusinessName('');
+      setSubmittedBy('');
+      setGpsData(null);
+      setGpsError(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -513,7 +652,9 @@ const App = () => {
         body: JSON.stringify({
           image_base64: imageBase64,
           location: location,
-          notes: notes
+          notes: notes,
+          submitted_by: submittedBy.trim() || 'Anonymous',
+          gps_data: gpsData
         })
       });
 
@@ -527,6 +668,10 @@ const App = () => {
         setSelectedImage(null);
         setLocation('');
         setNotes('');
+        setSubmittedBy('');
+        setSelectedLocations([]);
+        setGpsData(null);
+        setGpsError(null);
         loadInspections();
         loadDueInspections();
       } else if (response.status === 504 || response.status === 502) {
@@ -576,7 +721,31 @@ const App = () => {
       }
     } catch (error) {
       console.error('Analysis failed:', error);
-      alert('Analysis failed. Please try again.');
+      
+      // Save to offline queue if network request failed
+      const submissionData = {
+        image_base64: selectedImage.split(',')[1],
+        location: location,
+        notes: notes,
+        submitted_by: submittedBy.trim() || 'Anonymous',
+        gps_data: gpsData,
+        mode: 'technician',
+        timestamp: new Date().toISOString(),
+        source: 'technician_mode'
+      };
+      
+      console.log('💾 Saving technician submission to offline queue due to network error...');
+      saveToOfflineQueue(submissionData);
+      alert('📱 No internet connection. Submission saved offline and will be uploaded when connection is restored.');
+      
+      // Clear the form even though it's offline
+      setSelectedImage(null);
+      setLocation('');
+      setNotes('');
+      setSubmittedBy('');
+      setSelectedLocations([]);
+      setGpsData(null);
+      setGpsError(null);
     } finally {
       setIsAnalyzing(false);
     }
@@ -815,6 +984,19 @@ const App = () => {
                 >
                   📊 Data
                 </button>
+                
+                {/* Offline Queue Indicator */}
+                {offlineQueue.length > 0 && (
+                  <div 
+                    className="flex items-center space-x-1 bg-orange-500/20 text-orange-400 px-2 py-1 rounded text-xs border border-orange-500/30 cursor-pointer hover:bg-orange-500/30 transition-colors"
+                    onClick={processOfflineQueue}
+                    title={`${offlineQueue.length} submissions queued offline. Click to retry upload.`}
+                  >
+                    <span>📱</span>
+                    <span>{offlineQueue.length}</span>
+                    {isProcessingOffline && <span className="animate-spin">⟳</span>}
+                  </div>
+                )}
               </div>
             </nav>
 
@@ -959,6 +1141,20 @@ const App = () => {
                 {/* Quick Shot Form */}
                 <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
                   <div className="space-y-6">
+                    {/* Submitted By Field */}
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        👤 Submitted By
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Your name (optional)"
+                        value={submittedBy}
+                        onChange={(e) => setSubmittedBy(e.target.value)}
+                        className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
                     {/* Business Name Field - Front and Center */}
                     <div>
                       <label className="block text-white text-lg font-medium mb-3">
@@ -1210,6 +1406,20 @@ const App = () => {
                 </div>
 
                 <div className="space-y-4">
+                  {/* Submitted By Field */}
+                  <div>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      👤 Submitted By
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Your name (optional)"
+                      value={submittedBy}
+                      onChange={(e) => setSubmittedBy(e.target.value)}
+                      className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
                   {/* Location Multi-Select with Checkboxes */}
                   <div className="relative">
                     <label className="block text-white text-sm font-medium mb-2">
