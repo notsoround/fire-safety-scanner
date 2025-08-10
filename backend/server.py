@@ -95,6 +95,61 @@ class InspectionUpdate(BaseModel):
 
 
 # AI Analysis Helper Functions
+def extract_final_answer_from_reasoning(reasoning: str) -> str:
+    """Extract the final answer from AI reasoning content."""
+    try:
+        # Split by common reasoning markers and get the last substantive part
+        lines = reasoning.split('\n')
+        
+        # Look for patterns that indicate final answers
+        final_answer_patterns = [
+            'answer:', 'result:', 'conclusion:', 'final:', 'response:', 'type:', 'therefore',
+            'ABC', 'BC', 'CO2', 'Class A', 'Class B', 'Class C', 'Class K', 'Water', 'Foam', 'Dry Chemical',
+            'unknown', 'n/a', 'not found'
+        ]
+        
+        # Search from the end backwards for the most likely answer
+        for line in reversed(lines):
+            line_lower = line.strip().lower()
+            if line_lower and len(line_lower) > 2:
+                # Check if this line contains a likely final answer
+                for pattern in final_answer_patterns:
+                    if pattern.lower() in line_lower:
+                        # Extract the actual answer (remove markdown formatting)
+                        clean_line = line.strip().replace('*', '').replace('#', '').replace('`', '')
+                        
+                        # If it's a "type:" format, get what comes after
+                        if ':' in clean_line:
+                            parts = clean_line.split(':')
+                            if len(parts) > 1:
+                                answer = parts[-1].strip()
+                                if answer and len(answer) < 50:  # Reasonable answer length
+                                    return answer
+                        
+                        # If it's a single word/short phrase that matches our patterns
+                        if len(clean_line) < 50 and any(p.lower() in clean_line.lower() for p in final_answer_patterns[7:]):
+                            return clean_line
+        
+        # If no clear pattern found, try to extract common extinguisher types from anywhere in the text
+        common_types = ['ABC', 'BC', 'CO2', 'Dry Chemical', 'Water', 'Foam', 'Class A', 'Class B', 'Class C', 'Class K']
+        reasoning_upper = reasoning.upper()
+        
+        for ext_type in common_types:
+            if ext_type.upper() in reasoning_upper:
+                return ext_type
+        
+        # Fallback: return the last non-empty line if it's reasonably short
+        for line in reversed(lines):
+            clean_line = line.strip().replace('*', '').replace('#', '').replace('`', '')
+            if clean_line and len(clean_line) < 100 and not clean_line.startswith('**'):
+                return clean_line
+                
+        return "unknown"
+        
+    except Exception as e:
+        print(f"Error extracting final answer from reasoning: {e}")
+        return "unknown"
+
 async def analyze_image_layer(prompt: str, data_url: str) -> str:
     """Generic helper to call the AI model with a specific prompt and image."""
     try:
@@ -139,10 +194,12 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
         message = response.choices[0].message
         result = message.content.strip() if message.content else ""
         
-        # If content is empty but reasoning_content exists, use reasoning_content
+        # If content is empty but reasoning_content exists, extract final answer
         if not result and hasattr(message, 'reasoning_content') and message.reasoning_content:
-            result = message.reasoning_content.strip()
-            print(f"📝 Using reasoning_content field as content was empty")
+            reasoning = message.reasoning_content.strip()
+            # Extract final answer from reasoning content (look for last meaningful line)
+            result = extract_final_answer_from_reasoning(reasoning)
+            print(f"📝 Using reasoning_content field, extracted: {result[:50]}...")
             
         print(f"✅ AI Response Success: {result}")
         return result
@@ -177,12 +234,12 @@ async def analyze_day(raw_text: str, data_url: str) -> str:
 
 async def analyze_extinguisher_type(raw_text: str, data_url: str) -> str:
     """Layer 3a: Analyzes and extracts the extinguisher type."""
-    prompt = f"This is a fire extinguisher inspection tag. Look for the extinguisher type classification (like ABC, BC, CO2, Class A, Class B, Class C, Class K, Water, Foam, etc.). From this text: '{raw_text}' and the image, what is the extinguisher TYPE? Respond with only the type (e.g., 'ABC', 'CO2') or 'unknown' if not found."
+    prompt = f"This is a fire extinguisher inspection tag. Look for the extinguisher type classification (like ABC, BC, CO2, Class A, Class B, Class C, Class K, Water, Foam, Dry Chemical, etc.). From this text: '{raw_text}' and the image, what is the extinguisher TYPE? IMPORTANT: Respond with ONLY the type classification (e.g., 'ABC', 'CO2', 'Dry Chemical') or 'unknown' if not found. Do not include explanations or reasoning - just the final answer."
     return await analyze_image_layer(prompt, data_url)
 
 async def analyze_condition(raw_text: str, data_url: str) -> str:
     """Layer 3b: Analyzes and assesses the extinguisher condition."""
-    prompt = f"This is a fire extinguisher inspection tag. Based on the inspection information, assess the overall condition. Look for any indicators of problems, maintenance needs, or good condition. From this text: '{raw_text}' and the image, what is the overall CONDITION? Respond with only 'Good', 'Fair', 'Poor', or 'unknown'."
+    prompt = f"This is a fire extinguisher inspection tag. Based on the inspection information, assess the overall condition. Look for any indicators of problems, maintenance needs, or good condition. From this text: '{raw_text}' and the image, what is the overall CONDITION? IMPORTANT: Respond with ONLY one word: 'Good', 'Fair', 'Poor', or 'unknown'. No explanations."
     return await analyze_image_layer(prompt, data_url)
 
 async def analyze_company_info(raw_text: str, data_url: str) -> str:
