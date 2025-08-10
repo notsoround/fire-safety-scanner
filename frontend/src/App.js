@@ -1176,6 +1176,39 @@ const App = () => {
                   </div>
                 )}
 
+                {/* GPS Section */}
+                <div className="bg-black/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-white font-semibold">📍 GPS Location</h3>
+                    <button
+                      onClick={captureGPS}
+                      disabled={isCapturingGPS}
+                      className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded hover:bg-blue-500/30 transition-colors duration-300 disabled:opacity-50"
+                    >
+                      {isCapturingGPS ? '📡 Getting GPS...' : '📡 Capture GPS'}
+                    </button>
+                  </div>
+                  
+                  {gpsData && (
+                    <div className="text-sm text-green-400">
+                      ✅ GPS: {gpsData.latitude.toFixed(6)}, {gpsData.longitude.toFixed(6)} 
+                      <span className="text-white/60 ml-2">(±{Math.round(gpsData.accuracy)}m)</span>
+                    </div>
+                  )}
+                  
+                  {gpsError && (
+                    <div className="text-sm text-red-400">
+                      ❌ GPS Error: {gpsError}
+                    </div>
+                  )}
+                  
+                  {!gpsData && !gpsError && !isCapturingGPS && (
+                    <div className="text-sm text-white/60">
+                      Click "Capture GPS" to get location automatically
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-4">
                   {/* Location Multi-Select with Checkboxes */}
                   <div className="relative">
