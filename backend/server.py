@@ -748,7 +748,8 @@ async def delete_inspection(
 
 async def _get_mongo_inspections(query: dict):
     """Helper to fetch and process inspections from MongoDB."""
-    inspections = list(inspections_collection.find(query))
+    # Sort by created_at descending (newest first), fallback to _id descending for older records
+    inspections = list(inspections_collection.find(query).sort([("created_at", -1), ("_id", -1)]))
     
     for item in inspections:
         item["_id"] = str(item["_id"]) # Convert ObjectId
