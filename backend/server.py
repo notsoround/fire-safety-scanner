@@ -564,19 +564,64 @@ async def create_inspection(
             print(f"❌ Database insert failed: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         
-        # Send structured data to N8n webhook
+        # Send comprehensive data to N8n webhook for email notifications
         webhook_data = {
             "inspection_id": inspection_id,
             "user_id": user["id"],
             "location": inspection_request.location,
+            "notes": getattr(inspection_request, 'notes', ''),
+            "submitted_by": getattr(inspection_request, 'submitted_by', 'Anonymous'),
+            "business_name": getattr(inspection_request, 'business_name', ''),
+            "mode": getattr(inspection_request, 'mode', 'standard'),
+            "timestamp": datetime.utcnow().isoformat(),
             "analysis": final_analysis_json,
-            "timestamp": datetime.utcnow().isoformat()
+            "image_base64": inspection_request.image_base64,
+            "gps_data": getattr(inspection_request, 'gps_data', None),
+            
+            # Email-friendly formatted data
+            "email_subject": f"🔥 Fire Safety Inspection - {inspection_request.location}",
+            "email_summary": {
+                "location": inspection_request.location,
+                "inspector": getattr(inspection_request, 'submitted_by', 'Anonymous'),
+                "business": getattr(inspection_request, 'business_name', 'N/A'),
+                "date": datetime.utcnow().strftime("%B %d, %Y at %I:%M %p"),
+                "condition": final_analysis_json.get("condition", "Unknown"),
+                "requires_attention": final_analysis_json.get("requires_attention", False),
+                "extinguisher_type": final_analysis_json.get("extinguisher_type", "Unknown"),
+                "last_inspection": final_analysis_json.get("last_inspection_date", "Unknown"),
+                "next_due": final_analysis_json.get("next_due_date", "Unknown"),
+                "equipment_numbers": final_analysis_json.get("equipment_numbers", {}),
+                "service_company": final_analysis_json.get("service_company", {}),
+                "maintenance_notes": final_analysis_json.get("maintenance_notes", ""),
+                "gps_coordinates": None
+            }
         }
         
-        try:
-            requests.post(N8N_WEBHOOK_URL, json=webhook_data)
-        except requests.exceptions.RequestException as e:
-            print(f"Error sending webhook: {e}")
+        # Format GPS data for email
+        if hasattr(inspection_request, 'gps_data') and inspection_request.gps_data:
+            try:
+                gps_data = inspection_request.gps_data
+                if isinstance(gps_data, str):
+                    gps_data = json.loads(gps_data)
+                if gps_data and 'latitude' in gps_data and 'longitude' in gps_data:
+                    webhook_data["email_summary"]["gps_coordinates"] = f"{gps_data['latitude']:.6f}, {gps_data['longitude']:.6f}"
+                    webhook_data["email_summary"]["google_maps_link"] = f"https://maps.google.com?q={gps_data['latitude']},{gps_data['longitude']}"
+            except (json.JSONDecodeError, TypeError, KeyError):
+                pass
+        
+        # Send webhook if URL is configured
+        if N8N_WEBHOOK_URL:
+            try:
+                print(f"📧 Sending webhook notification to N8N...")
+                response = requests.post(N8N_WEBHOOK_URL, json=webhook_data, timeout=10)
+                if response.status_code == 200:
+                    print(f"✅ Webhook sent successfully")
+                else:
+                    print(f"⚠️ Webhook response: {response.status_code}")
+            except requests.exceptions.RequestException as e:
+                print(f"❌ Error sending webhook: {e}")
+        else:
+            print("⚠️ N8N_WEBHOOK_URL not configured, skipping webhook")
 
         duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
         return {
