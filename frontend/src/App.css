@@ -3,6 +3,18 @@
   padding-top: 80px; /* Adjust based on header height */
 }
 
+/* Additional spacing for mobile toggle on capture page */
+.main-content-with-mobile-toggle {
+  padding-top: 140px; /* Header + mobile toggle height */
+}
+
+/* Desktop overrides - no extra mobile toggle spacing */
+@media (min-width: 768px) {
+  .main-content-with-mobile-toggle {
+    padding-top: 80px; /* Same as main-content on desktop */
+  }
+}
+
 /* Custom animations and effects */
 @keyframes glow {
   0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }

@@ -908,8 +908,38 @@ const App = () => {
         </div>
       </header>
 
+      {/* Mobile Mode Toggle - Visible only on Capture page */}
+      {currentPage === 'dashboard' && (
+        <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-black/20 backdrop-blur-sm border-b border-white/10">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex bg-white/10 rounded-lg p-1">
+              <button
+                onClick={() => setIsQuickShotMode(false)}
+                className={`flex-1 px-3 py-2 rounded text-sm transition-all duration-300 ${
+                  !isQuickShotMode
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/70 hover:text-white'
+                }`}
+              >
+                🔧 Technician
+              </button>
+              <button
+                onClick={() => setIsQuickShotMode(true)}
+                className={`flex-1 px-3 py-2 rounded text-sm transition-all duration-300 ${
+                  isQuickShotMode
+                    ? 'bg-white/20 text-white'
+                    : 'text-white/70 hover:text-white'
+                }`}
+              >
+                ⚡ Quick Shot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
-      <main className="main-content relative z-10 container mx-auto px-4 py-8">
+      <main className={`relative z-10 container mx-auto px-4 py-8 ${currentPage === 'dashboard' ? 'main-content-with-mobile-toggle' : 'main-content'}`}>
 
         {currentPage === 'dashboard' && (
           <div className="space-y-8">
