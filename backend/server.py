@@ -135,14 +135,14 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
                 }
             ]
         )
-        # Handle response - check content first, then reasoning if content is empty
+        # Handle response - check content first, then reasoning_content if content is empty
         message = response.choices[0].message
         result = message.content.strip() if message.content else ""
         
-        # If content is empty but reasoning exists, use reasoning
-        if not result and hasattr(message, 'reasoning') and message.reasoning:
-            result = message.reasoning.strip()
-            print(f"📝 Using reasoning field as content was empty")
+        # If content is empty but reasoning_content exists, use reasoning_content
+        if not result and hasattr(message, 'reasoning_content') and message.reasoning_content:
+            result = message.reasoning_content.strip()
+            print(f"📝 Using reasoning_content field as content was empty")
             
         print(f"✅ AI Response Success: {result}")
         return result
