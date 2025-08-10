@@ -95,6 +95,33 @@ class InspectionUpdate(BaseModel):
 
 
 # AI Analysis Helper Functions
+def format_equipment_summary(equipment_numbers: dict) -> str:
+    """Format equipment numbers for email display."""
+    if not equipment_numbers:
+        return "No equipment numbers found"
+    
+    summary_parts = []
+    for key, value in equipment_numbers.items():
+        if value and value != "unknown":
+            summary_parts.append(f"{key.upper()}: {value}")
+    
+    return " | ".join(summary_parts) if summary_parts else "No equipment numbers found"
+
+def format_service_company_summary(service_company: dict) -> str:
+    """Format service company information for email display."""
+    if not service_company:
+        return "No service company information found"
+    
+    summary_parts = []
+    if service_company.get("name") and service_company["name"] != "unknown":
+        summary_parts.append(f"Company: {service_company['name']}")
+    if service_company.get("phone") and service_company["phone"] != "unknown":
+        summary_parts.append(f"Phone: {service_company['phone']}")
+    if service_company.get("address") and service_company["address"] != "unknown":
+        summary_parts.append(f"Address: {service_company['address']}")
+    
+    return " | ".join(summary_parts) if summary_parts else "No service company information found"
+
 def extract_final_answer_from_reasoning(reasoning: str) -> str:
     """Extract the final answer from AI reasoning content."""
     try:
@@ -635,22 +662,41 @@ async def create_inspection(
             "image_base64": inspection_request.image_base64,
             "gps_data": getattr(inspection_request, 'gps_data', None),
             
-            # Email-friendly formatted data
-            "email_subject": f"🔥 Fire Safety Inspection - {inspection_request.location}",
+            # New tag submission notification
+            "notification_type": "new_tag_submitted",
+            "alert_message": "🆕 NEW FIRE EXTINGUISHER TAG SUBMITTED",
+            "priority": "high" if final_analysis_json.get("requires_attention", False) else "normal",
+            
+            # Email-friendly formatted data with optimized AI results
+            "email_subject": f"🆕 NEW TAG: Fire Safety Inspection - {inspection_request.location}",
             "email_summary": {
+                "alert_header": "🆕 NEW FIRE EXTINGUISHER TAG SUBMITTED",
                 "location": inspection_request.location,
                 "inspector": getattr(inspection_request, 'submitted_by', 'Anonymous'),
                 "business": getattr(inspection_request, 'business_name', 'N/A'),
                 "date": datetime.utcnow().strftime("%B %d, %Y at %I:%M %p"),
+                "submission_mode": "⚡ Quick Shot" if getattr(inspection_request, 'mode', 'standard') == 'quick_shot' else "🔧 Technician",
+                
+                # Optimized AI Analysis Results
                 "condition": final_analysis_json.get("condition", "Unknown"),
-                "requires_attention": final_analysis_json.get("requires_attention", False),
+                "requires_attention": "🚨 YES - NEEDS ATTENTION" if final_analysis_json.get("requires_attention", False) else "✅ No Action Required",
                 "extinguisher_type": final_analysis_json.get("extinguisher_type", "Unknown"),
                 "last_inspection": final_analysis_json.get("last_inspection_date", "Unknown"),
                 "next_due": final_analysis_json.get("next_due_date", "Unknown"),
+                
+                # Equipment Information
                 "equipment_numbers": final_analysis_json.get("equipment_numbers", {}),
+                "equipment_summary": format_equipment_summary(final_analysis_json.get("equipment_numbers", {})),
+                
+                # Service Company Information
                 "service_company": final_analysis_json.get("service_company", {}),
+                "service_summary": format_service_company_summary(final_analysis_json.get("service_company", {})),
+                
+                # Additional Details
                 "maintenance_notes": final_analysis_json.get("maintenance_notes", ""),
-                "gps_coordinates": None
+                "gps_coordinates": None,
+                "image_included": True,
+                "analysis_confidence": "High (AI-Powered Analysis)"
             }
         }
         
@@ -669,16 +715,23 @@ async def create_inspection(
         # Send webhook if URL is configured
         if N8N_WEBHOOK_URL:
             try:
-                print(f"📧 Sending webhook notification to N8N...")
-                response = requests.post(N8N_WEBHOOK_URL, json=webhook_data, timeout=10)
+                print(f"📧 Sending NEW TAG notification to N8N webhook...")
+                print(f"🆕 Alert: {webhook_data['alert_message']}")
+                print(f"📍 Location: {inspection_request.location}")
+                print(f"🔥 Type: {final_analysis_json.get('extinguisher_type', 'Unknown')}")
+                print(f"📷 Image included: {len(inspection_request.image_base64)} characters")
+                
+                response = requests.post(N8N_WEBHOOK_URL, json=webhook_data, timeout=15)
                 if response.status_code == 200:
-                    print(f"✅ Webhook sent successfully")
+                    print(f"✅ NEW TAG notification sent successfully to email automation")
+                    print(f"📨 Email will be generated for: {webhook_data['email_subject']}")
                 else:
                     print(f"⚠️ Webhook response: {response.status_code}")
+                    print(f"Response: {response.text[:200]}...")
             except requests.exceptions.RequestException as e:
-                print(f"❌ Error sending webhook: {e}")
+                print(f"❌ Error sending NEW TAG notification: {e}")
         else:
-            print("⚠️ N8N_WEBHOOK_URL not configured, skipping webhook")
+            print("⚠️ N8N_WEBHOOK_URL not configured, skipping NEW TAG notification")
 
         duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
         return {
