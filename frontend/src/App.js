@@ -31,6 +31,13 @@ const App = () => {
   const [submittedBy, setSubmittedBy] = useState('');
   const [offlineQueue, setOfflineQueue] = useState([]);
   const [isProcessingOffline, setIsProcessingOffline] = useState(false);
+  
+  // Toast notification state
+  const [toasts, setToasts] = useState([]);
+  
+  // User login state
+  const [currentUser, setCurrentUser] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [businessName, setBusinessName] = useState('');
   const [gpsData, setGpsData] = useState(null);
   const [isCapturingGPS, setIsCapturingGPS] = useState(false);
@@ -563,6 +570,50 @@ const App = () => {
     }
   };
 
+  // Toast notification functions
+  const showToast = (message, type = 'success', duration = 4000) => {
+    const id = Date.now();
+    const toast = { id, message, type };
+    
+    setToasts(prev => [...prev, toast]);
+    
+    // Auto-remove toast after duration
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, duration);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // User login functions
+  const loginUser = (username) => {
+    if (username.trim()) {
+      setCurrentUser(username.trim());
+      setSubmittedBy(username.trim());
+      localStorage.setItem('currentUser', username.trim());
+      setShowLoginModal(false);
+      showToast(`👤 Logged in as ${username.trim()}`, 'success');
+    }
+  };
+
+  const logoutUser = () => {
+    setCurrentUser('');
+    setSubmittedBy('');
+    localStorage.removeItem('currentUser');
+    showToast('👋 Logged out successfully', 'info');
+  };
+
+  // Load saved user on startup
+  useEffect(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      setCurrentUser(savedUser);
+      setSubmittedBy(savedUser);
+    }
+  }, []);
+
   // Quick Shot Submission
   const submitQuickShot = async () => {
     if (!selectedImage || !businessName.trim()) {
@@ -598,8 +649,8 @@ const App = () => {
       });
 
       if (response.ok) {
-        // Show success message and reset form
-        alert('✅ Submitted successfully! Processing in background...');
+        // Show success toast and reset form
+        showToast('🚀 Submitted successfully! Processing in background...', 'success');
         setSelectedImage(null);
         setBusinessName('');
         setSubmittedBy('');
@@ -616,7 +667,7 @@ const App = () => {
       // Save to offline queue if network request failed
       console.log('💾 Saving to offline queue due to network error...');
       saveToOfflineQueue(submissionData);
-      alert('📱 No internet connection. Submission saved offline and will be uploaded when connection is restored.');
+      showToast('📱 No internet connection. Submission saved offline and will be uploaded when connection is restored.', 'info', 6000);
       
       // Clear the form even though it's offline
       setSelectedImage(null);
@@ -736,7 +787,7 @@ const App = () => {
       
       console.log('💾 Saving technician submission to offline queue due to network error...');
       saveToOfflineQueue(submissionData);
-      alert('📱 No internet connection. Submission saved offline and will be uploaded when connection is restored.');
+      showToast('📱 No internet connection. Submission saved offline and will be uploaded when connection is restored.', 'info', 6000);
       
       // Clear the form even though it's offline
       setSelectedImage(null);
@@ -985,6 +1036,26 @@ const App = () => {
                   📊 Data
                 </button>
                 
+                {/* User Login/Logout */}
+                {currentUser ? (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white/70 text-sm">👤 {currentUser}</span>
+                    <button
+                      onClick={logoutUser}
+                      className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded hover:bg-red-500/30 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded hover:bg-blue-500/30 transition-colors"
+                  >
+                    👤 Login
+                  </button>
+                )}
+
                 {/* Offline Queue Indicator */}
                 {offlineQueue.length > 0 && (
                   <div 
@@ -1225,13 +1296,25 @@ const App = () => {
                     <div className="space-y-4">
                       <div className="flex space-x-4">
                         <button
-                          onClick={() => fileInputRef.current.click()}
+                          onClick={() => {
+                            fileInputRef.current.click();
+                            // Auto-capture GPS when selecting file for accurate location
+                            if (!gpsData && !isCapturingGPS) {
+                              captureGPS();
+                            }
+                          }}
                           className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
                         >
                           📁 Choose File
                         </button>
                         <button
-                          onClick={() => setIsFireExtinguisherCameraOpen(true)}
+                          onClick={() => {
+                            setIsFireExtinguisherCameraOpen(true);
+                            // Auto-capture GPS when camera opens for accurate location
+                            if (!gpsData && !isCapturingGPS) {
+                              captureGPS();
+                            }
+                          }}
                           className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-4 px-6 rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105"
                         >
                           📷 Take Photo
@@ -1329,13 +1412,25 @@ const App = () => {
               <div className="space-y-4">
                 <div className="flex space-x-4">
                   <button
-                    onClick={() => fileInputRef.current.click()}
+                    onClick={() => {
+                      fileInputRef.current.click();
+                      // Auto-capture GPS when selecting file for accurate location
+                      if (!gpsData && !isCapturingGPS) {
+                        captureGPS();
+                      }
+                    }}
                     className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
                   >
                     📁 Choose File
                   </button>
                   <button
-                    onClick={() => setIsFireExtinguisherCameraOpen(true)}
+                    onClick={() => {
+                      setIsFireExtinguisherCameraOpen(true);
+                      // Auto-capture GPS when camera opens for accurate location
+                      if (!gpsData && !isCapturingGPS) {
+                        captureGPS();
+                      }
+                    }}
                     className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105"
                   >
                     📷 Take Photo
@@ -2217,6 +2312,77 @@ const App = () => {
         )}
 
       </main>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 rounded-xl p-6 border border-white/20 max-w-md w-full">
+            <h3 className="text-xl font-bold text-white mb-4">👤 Technician Login</h3>
+            <p className="text-white/70 text-sm mb-4">
+              Enter your name to track your submissions and enable attribution.
+            </p>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const username = formData.get('username');
+              loginUser(username);
+            }}>
+              <input
+                name="username"
+                type="text"
+                placeholder="Enter your name"
+                autoFocus
+                className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              />
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowLoginModal(false)}
+                  className="flex-1 bg-white/10 text-white font-bold py-3 px-6 rounded-lg hover:bg-white/20 transition-all duration-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notifications */}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`max-w-sm p-4 rounded-lg border backdrop-blur-md transform transition-all duration-300 animate-slide-in-right ${
+                toast.type === 'success'
+                  ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                  : toast.type === 'error'
+                  ? 'bg-red-500/20 border-red-500/50 text-red-400'
+                  : 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+              }`}
+            >
+              <div className="flex items-start space-x-3">
+                <div className="flex-1 text-sm font-medium">
+                  {toast.message}
+                </div>
+                <button
+                  onClick={() => removeToast(toast.id)}
+                  className="text-white/60 hover:text-white transition-colors flex-shrink-0"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

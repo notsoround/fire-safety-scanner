@@ -15,6 +15,22 @@
   }
 }
 
+/* Toast notification animations */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
 /* Custom animations and effects */
 @keyframes glow {
   0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
