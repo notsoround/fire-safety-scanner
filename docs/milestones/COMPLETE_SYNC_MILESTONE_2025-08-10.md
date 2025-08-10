@@ -55,7 +55,7 @@
 ### **Production Environment** 
 - **URL**: https://scanner.hales.ai ✅ OPERATIONAL
 - **AI Analysis**: ✅ FULLY WORKING (reasoning_content fix deployed)
-- **API Key**: `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`
+- **API Key**: `sk-or-v1-[REDACTED]` (Configured on server)
 - **Model**: `openrouter/google/gemini-2.5-pro`
 - **Last Deploy**: August 10, 2025 @ 6:22 PM EST
 

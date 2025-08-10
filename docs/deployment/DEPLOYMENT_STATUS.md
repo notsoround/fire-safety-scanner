@@ -26,7 +26,7 @@
 ## 🔑 **PRODUCTION CONFIGURATION**
 
 ### **Environment Variables**
-- **OpenRouter API Key**: `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` (Active)
+- **OpenRouter API Key**: `sk-or-v1-[REDACTED]` (Configured on server - not stored in GitHub)
 - **MODEL_ID**: `openrouter/google/gemini-2.5-pro` (CRITICAL: Requires openrouter/ prefix)
 - **Response Parsing**: Updated to use `message.reasoning_content` field (Aug 10 fix)
 - **Database**: `mongodb://mongo:27017/production_database`
