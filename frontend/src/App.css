@@ -1,3 +1,8 @@
+/* Fixed header spacing */
+.main-content {
+  padding-top: 80px; /* Adjust based on header height */
+}
+
 /* Custom animations and effects */
 @keyframes glow {
   0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }

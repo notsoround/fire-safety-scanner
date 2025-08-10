@@ -747,7 +747,7 @@ const App = () => {
       />
       
       {/* Header */}
-      <header className="relative z-10 bg-black/15 backdrop-blur-sm border-b border-white/10">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/15 backdrop-blur-sm border-b border-white/10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
@@ -909,7 +909,7 @@ const App = () => {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 py-8">
+      <main className="main-content relative z-10 container mx-auto px-4 py-8">
 
         {currentPage === 'dashboard' && (
           <div className="space-y-8">
@@ -1414,10 +1414,10 @@ const App = () => {
                           <label className="block text-white font-semibold mb-2">Reference Image:</label>
                           <div className="flex justify-center">
                             <img 
-                              src={inspection.image_base64} 
+                              src={`data:image/jpeg;base64,${inspection.image_base64}`} 
                               alt="Inspection reference"
                               className="max-w-sm max-h-64 object-contain rounded-lg border border-white/20 cursor-pointer hover:opacity-80 transition-opacity duration-300"
-                              onClick={() => setModalImage(inspection.image_base64)}
+                              onClick={() => setModalImage(`data:image/jpeg;base64,${inspection.image_base64}`)}
                               title="Click to view full size"
                             />
                           </div>
