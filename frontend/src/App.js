@@ -407,23 +407,17 @@ const App = () => {
   const fetchBusinessSuggestions = async (latitude, longitude) => {
     setIsLoadingSuggestions(true);
     try {
-      // Using Google Places Text Search API through backend
-      const response = await fetch(`${backendUrl}/api/places/nearby`, {
-        method: 'POST',
+      // Using Google Places API through backend with GET request
+      const response = await fetch(`${backendUrl}/api/places/nearby?lat=${latitude}&lng=${longitude}&radius=500`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'session-token': localStorage.getItem('session_token')
-        },
-        body: JSON.stringify({
-          latitude: latitude,
-          longitude: longitude,
-          radius: 500 // 500 meter radius
-        })
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
-        setBusinessSuggestions(data.businesses || []);
+        setBusinessSuggestions(data.places || []);
         setShowSuggestions(true);
       } else {
         console.warn('Could not fetch business suggestions');
