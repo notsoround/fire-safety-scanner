@@ -925,7 +925,7 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black/80 backdrop-blur-md flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
@@ -944,14 +944,14 @@ const App = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black/80 backdrop-blur-md flex items-center justify-center">
         <div className="text-white text-xl">Loading Fire Safety Scanner...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+    <div className="min-h-screen bg-black/80 backdrop-blur-md">
       {/* Background Image */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40"
@@ -1149,6 +1149,19 @@ const App = () => {
                 >
                   📊 Data
                 </button>
+                
+                {/* Login Button for Mobile */}
+                <div className="border-t border-white/10 pt-2 mt-2">
+                  <button
+                    onClick={() => {
+                      setShowLoginModal(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-3 rounded-lg text-left text-white/70 hover:text-white hover:bg-white/10 transition-colors duration-300"
+                  >
+                    👤 {currentUser ? `${currentUser} (Change)` : 'Technician Login'}
+                  </button>
+                </div>
               </nav>
             </div>
           )}
@@ -1297,7 +1310,7 @@ const App = () => {
                               captureGPS();
                             }
                           }}
-                          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+                          className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold py-4 px-6 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 backdrop-blur-md border border-white/20"
                         >
                           📁 Choose File
                         </button>
@@ -1309,7 +1322,7 @@ const App = () => {
                               captureGPS();
                             }
                           }}
-                          className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-4 px-6 rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105"
+                          className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold py-4 px-6 rounded-lg hover:from-gray-500 hover:to-gray-600 transition-all duration-300 transform hover:scale-105 backdrop-blur-md border border-white/20"
                         >
                           📷 Take Photo
                         </button>
@@ -1413,7 +1426,7 @@ const App = () => {
                         captureGPS();
                       }
                     }}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+                    className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold py-3 px-6 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 backdrop-blur-md border border-white/20"
                   >
                     📁 Choose File
                   </button>
@@ -1425,7 +1438,7 @@ const App = () => {
                         captureGPS();
                       }
                     }}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105"
+                    className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:from-gray-500 hover:to-gray-600 transition-all duration-300 transform hover:scale-105 backdrop-blur-md border border-white/20"
                   >
                     📷 Take Photo
                   </button>
@@ -1507,6 +1520,66 @@ const App = () => {
                       onChange={(e) => setSubmittedBy(e.target.value)}
                       className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+
+                  {/* Business Name Field with Suggestions for Technician Mode */}
+                  <div className="relative">
+                    <label className="block text-white text-sm font-medium mb-2">
+                      🏢 Business Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter business/location name"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      onFocus={() => setShowSuggestions(businessSuggestions.length > 0)}
+                      className="w-full px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    
+                    {/* Business Suggestions Dropdown for Technician Mode */}
+                    {showSuggestions && (businessSuggestions.length > 0 || isLoadingSuggestions) && (
+                      <div className="absolute z-10 w-full mt-1 bg-black/90 backdrop-blur-md border border-white/20 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {isLoadingSuggestions ? (
+                          <div className="p-4 text-center">
+                            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                            <div className="text-white/70 text-sm mt-2">Finding nearby businesses...</div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="p-3 border-b border-white/20">
+                              <div className="text-sm text-white/70 mb-2">📍 Nearby businesses based on GPS:</div>
+                            </div>
+                            {businessSuggestions.map((business, index) => (
+                              <button
+                                key={index}
+                                onClick={() => {
+                                  setBusinessName(business.name);
+                                  setShowSuggestions(false);
+                                }}
+                                className="w-full p-3 text-left hover:bg-white/10 transition-colors duration-200 border-b border-white/10 last:border-b-0"
+                              >
+                                <div className="text-white font-medium">{business.name}</div>
+                                <div className="text-white/60 text-sm">{business.vicinity}</div>
+                                <div className="text-white/40 text-xs">⭐ {business.rating} • {business.types}</div>
+                              </button>
+                            ))}
+                            <button
+                              className="w-full p-3 text-center text-white/50 hover:text-white/70 text-sm"
+                              onClick={() => setShowSuggestions(false)}
+                            >
+                              Use custom business name instead
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* No suggestions message for Technician Mode */}
+                    {gpsData && businessSuggestions.length === 0 && !isLoadingSuggestions && (
+                      <div className="mt-2 text-sm text-white/60">
+                        📍 GPS captured but no businesses found nearby - you can enter any business name
+                      </div>
+                    )}
                   </div>
 
                   {/* Location Multi-Select with Checkboxes */}
@@ -1617,7 +1690,7 @@ const App = () => {
                   />
                   <button
                     onClick={analyzeImage}
-                    disabled={isAnalyzing || !selectedImage || selectedLocations.length === 0}
+                    disabled={isAnalyzing || !selectedImage || selectedLocations.length === 0 || !businessName.trim()}
                     className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-3 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {isAnalyzing ? '🔍 Analyzing...' : '🔍 Analyze and Submit'}
@@ -1824,17 +1897,17 @@ const App = () => {
                             />
                           </div>
                           <div>
-                            <label className="block text-white font-semibold mb-2">Condition:</label>
-                            <select
-                              value={editFormData.condition}
+                            <label className="block text-white font-semibold mb-2">AI Notes & Observations:</label>
+                            <textarea
+                              value={editFormData.condition || ''}
                               onChange={(e) => setEditFormData({...editFormData, condition: e.target.value})}
-                              className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              <option value="">Select condition</option>
-                              <option value="Good">Good</option>
-                              <option value="Fair">Fair</option>
-                              <option value="Poor">Poor</option>
-                            </select>
+                              placeholder="AI detected condition, notes, or if this is not a fire extinguisher tag..."
+                              rows={3}
+                              className="w-full px-3 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            />
+                            <div className="mt-1 text-xs text-white/60">
+                              💡 Examples: "Good condition", "Needs attention", "Not a fire extinguisher tag", "Safety notice", etc.
+                            </div>
                           </div>
                           <div className="flex items-center">
                             <label className="flex items-center text-white font-semibold">
@@ -1968,7 +2041,7 @@ const App = () => {
                         <div className="flex space-x-4">
                           <button
                             onClick={saveInspectionChanges}
-                            className="px-6 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300"
+                            className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded-lg hover:from-green-500 hover:to-green-600 transition-all duration-300 backdrop-blur-md border border-white/20"
                           >
                             💾 Save Changes
                           </button>
@@ -2134,7 +2207,7 @@ const App = () => {
               </div>
               <div className="bg-white/8 backdrop-blur-md rounded-xl p-4 border border-white/20">
                 <h3 className="text-lg font-semibold text-white mb-2">Locations</h3>
-                <p className="text-2xl font-bold text-purple-400">
+                <p className="text-2xl font-bold text-white">
                   {new Set(inspections.map(i => i.location)).size}
                 </p>
               </div>
@@ -2310,7 +2383,7 @@ const App = () => {
       {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 rounded-xl p-6 border border-white/20 max-w-md w-full">
+          <div className="bg-black/90 backdrop-blur-md rounded-xl p-6 border border-white/20 max-w-md w-full">
             <h3 className="text-xl font-bold text-white mb-4">👤 Technician Login</h3>
             <p className="text-white/70 text-sm mb-4">
               Enter your name to track your submissions and enable attribution.
@@ -2331,7 +2404,7 @@ const App = () => {
               <div className="flex space-x-3">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+                  className="flex-1 bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold py-3 px-6 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-300 backdrop-blur-md border border-white/20"
                 >
                   Login
                 </button>

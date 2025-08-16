@@ -199,10 +199,11 @@ async def analyze_image_layer(prompt: str, data_url: str) -> str:
                 {
                     "role": "system",
                     "content": (
-                        "You are an NFPA-10–savvy fire safety expert analyzing hole-punched extinguisher tags. "
-                        "Infer the most recent year/month/day from punches; prefer the newest complete combo. "
-                        "If multiple days are punched, choose the lowest; if unreadable, answer 'unknown'. "
-                        "Always respond with only the exact value requested by the user message (no prose)."
+                        "You are an NFPA-10–savvy fire safety expert analyzing images. If this is a fire extinguisher tag, "
+                        "analyze hole-punched dates, preferring the newest complete combo. If multiple days are punched, choose the lowest. "
+                        "If this is NOT a fire extinguisher tag, provide helpful observations about what you see instead. "
+                        "For non-extinguisher images, describe what it is (e.g., 'Safety notice', 'Equipment label', 'Not fire equipment'). "
+                        "Always respond with only the exact value requested (no prose). Use 'unknown' only if truly unreadable."
                     )
                 },
                 {
