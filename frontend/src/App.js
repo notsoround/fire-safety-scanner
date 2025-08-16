@@ -925,8 +925,17 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black/80 backdrop-blur-md flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen relative">
+        <div
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
+          style={{
+            backgroundImage: 'url(/images/background.png)'
+          }}
+        />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-10" />
+        <div className="relative z-20 min-h-screen flex items-center justify-center">
+          <div className="text-white text-xl">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -944,21 +953,36 @@ const App = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-black/80 backdrop-blur-md flex items-center justify-center">
-        <div className="text-white text-xl">Loading Fire Safety Scanner...</div>
+      <div className="min-h-screen relative">
+        <div
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
+          style={{
+            backgroundImage: 'url(/images/background.png)'
+          }}
+        />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-10" />
+        <div className="relative z-20 min-h-screen flex items-center justify-center">
+          <div className="text-white text-xl">Loading Fire Safety Scanner...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black/80 backdrop-blur-md">
-      {/* Background Image */}
+    <div className="min-h-screen relative">
+      {/* Fixed Background Image */}
       <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
         style={{
           backgroundImage: 'url(/images/background.png)'
         }}
       />
+      
+      {/* Fixed Black Overlay */}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-10" />
+      
+      {/* Scrollable Content */}
+      <div className="relative z-20 min-h-screen">
       
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/15 backdrop-blur-sm border-b border-white/10">
@@ -2450,6 +2474,7 @@ const App = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };
