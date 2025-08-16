@@ -929,7 +929,8 @@ const App = () => {
         <div
           className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
           style={{
-            backgroundImage: 'url(/images/background.png)'
+            backgroundImage: 'url(/images/background.png)',
+            backgroundAttachment: 'fixed'
           }}
         />
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-10" />
@@ -957,7 +958,8 @@ const App = () => {
         <div
           className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
           style={{
-            backgroundImage: 'url(/images/background.png)'
+            backgroundImage: 'url(/images/background.png)',
+            backgroundAttachment: 'fixed'
           }}
         />
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-10" />
@@ -974,7 +976,8 @@ const App = () => {
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0"
         style={{
-          backgroundImage: 'url(/images/background.png)'
+          backgroundImage: 'url(/images/background.png)',
+          backgroundAttachment: 'fixed'
         }}
       />
       
