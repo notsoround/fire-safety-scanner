@@ -17,7 +17,7 @@ import litellm
 # from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()  # Commented out to prevent overriding Docker environment variables
 
 app = FastAPI(title="Fire Extinguisher Inspection API")
 
