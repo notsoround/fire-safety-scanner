@@ -45,6 +45,9 @@ inspections_collection = db["inspections"]
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL")
 GOOGLE_PLACES_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY")
+print(f"🔑 Google Places API Key loaded: {'Yes' if GOOGLE_PLACES_API_KEY else 'No'}")
+if GOOGLE_PLACES_API_KEY:
+    print(f"🔑 API Key preview: {GOOGLE_PLACES_API_KEY[:10]}...{GOOGLE_PLACES_API_KEY[-4:]}")
 
 # Models
 class User(BaseModel):
