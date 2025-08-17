@@ -933,7 +933,7 @@ const App = () => {
             backgroundAttachment: 'fixed'
           }}
         />
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-10" />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-10" />
         <div className="relative z-20 min-h-screen flex items-center justify-center">
           <div className="text-white text-xl">Loading...</div>
         </div>
@@ -962,7 +962,7 @@ const App = () => {
             backgroundAttachment: 'fixed'
           }}
         />
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-10" />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-10" />
         <div className="relative z-20 min-h-screen flex items-center justify-center">
           <div className="text-white text-xl">Loading Fire Safety Scanner...</div>
         </div>
@@ -982,7 +982,7 @@ const App = () => {
       />
       
       {/* Fixed Black Overlay */}
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-10" />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-10" />
       
       {/* Scrollable Content */}
       <div className="relative z-20 min-h-screen">
