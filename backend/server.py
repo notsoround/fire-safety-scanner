@@ -550,7 +550,7 @@ async def create_inspection(
     }
     
     try:
-        start_time = datetime.utcnow()
+        print("DEBUG: INSPECTION ENDPOINT CALLED!!!"); start_time = datetime.utcnow()
         # Detect image format from base64 content and create proper data URL
         image_base64 = inspection_request.image_base64
         
@@ -571,7 +571,7 @@ async def create_inspection(
         data_url = f"data:image/{image_format};base64,{image_base64}"
 
         # --- START REFACTORED AI ANALYSIS ---
-        # Layer 1: OCR
+        print("DEBUG: About to call extract_raw_text!!!"); # Layer 1: OCR
         raw_text = await extract_raw_text(data_url)
 
         # Layer 2 & 3: Parallel Analysis (Enhanced)
