@@ -42,13 +42,13 @@ sessions_collection = db["sessions"]
 inspections_collection = db["inspections"]
 
 # Environment variables
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or "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"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 N8N_WEBHOOK_URL = os.getenv("N8N_WEBHOOK_URL")
 # Try multiple environment variable names and provide fallback
 GOOGLE_PLACES_API_KEY = (
     os.getenv("GOOGLE_PLACES_API_KEY") or 
     os.getenv("GOOGLE_API_KEY") or 
-    "AIzaSyAE_Ye9p7NQyfkl_MDDgDuS1XNQihlk_dw"  # Fallback to working key
+    None
 )
 print(f"🔑 Google Places API Key loaded: {'Yes' if GOOGLE_PLACES_API_KEY else 'No'}")
 if GOOGLE_PLACES_API_KEY:
