@@ -188,7 +188,7 @@ def extract_final_answer_from_reasoning(reasoning: str) -> str:
 async def analyze_image_layer(prompt: str, data_url: str) -> str:
     """Generic helper to call the AI model with a specific prompt and image."""
     try:
-        print(f"🔍 AI Analysis Starting...")
+        print("DEBUGGING: AI ANALYSIS FUNCTION CALLED!!!"); print(f"🔍 AI Analysis Starting...")
         print(f"🔑 API Key: {OPENROUTER_API_KEY[:20]}...")
         print(f"📝 Prompt: {prompt[:100]}...")
         print(f"🖼️ Image URL length: {len(data_url)}")
