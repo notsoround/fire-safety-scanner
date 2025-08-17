@@ -255,12 +255,12 @@ async def extract_raw_text(data_url: str) -> str:
 
 async def analyze_year(raw_text: str, data_url: str) -> str:
     """Layer 2a: Analyzes and extracts the inspection year."""
-    prompt = f"This is a fire extinguisher inspection tag. Look for the most recent inspection year using PROCESS OF ELIMINATION. Punch holes are made DIRECTLY ON TOP of the year being marked, making that year number unreadable/covered. Look for years (2020-2030) that appear missing, obscured, or covered by holes. The tag may need mental rotation to see all orientations. From this text: '{raw_text}' and the image, what is the inspection YEAR? Respond with only the 4-digit year (e.g., 2025) or 'unknown' if no year appears covered/missing."
+    prompt = f"This is a fire extinguisher inspection tag. Look for the most recent inspection year - this could be punched holes, handwritten numbers, or printed dates. The year should be between 2020-2025. From this text: '{raw_text}' and the image, what is the inspection YEAR? Respond with only the 4-digit year (e.g., 2024) or 'unknown' if not found."
     return await analyze_image_layer(prompt, data_url)
 
 async def analyze_month(raw_text: str, data_url: str) -> str:
     """Layer 2b: Analyzes and extracts the inspection month."""
-    prompt = f"This is a fire extinguisher inspection tag. Look for the most recent inspection month using PROCESS OF ELIMINATION. Punch holes are made DIRECTLY ON TOP of the month abbreviation being marked (JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC), making that month text unreadable/covered. Month abbreviations may be arranged vertically, horizontally, or require mental rotation. Look for which month abbreviation appears missing, obscured, or covered by holes. From this text: '{raw_text}' and the image, what is the inspection MONTH? Respond with only the month number (1-12) or 'unknown' if no month appears covered/missing."
+    prompt = f"This is a fire extinguisher inspection tag. Look for the most recent inspection month - this could be punched holes, handwritten numbers, or printed dates. From this text: '{raw_text}' and the image, what is the inspection MONTH? Respond with only the month number (1-12) or 'unknown' if not found."
     return await analyze_image_layer(prompt, data_url)
 
 async def analyze_day(raw_text: str, data_url: str) -> str:
