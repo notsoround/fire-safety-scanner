@@ -188,7 +188,7 @@ def extract_final_answer_from_reasoning(reasoning: str) -> str:
 async def analyze_image_layer(prompt: str, data_url: str) -> str:
     """Generic helper to call the AI model with a specific prompt and image."""
     try:
-        print("DEBUGGING: AI ANALYSIS FUNCTION CALLED!!!"); print(f"🔍 AI Analysis Starting...")
+        with open("/tmp/debug.log", "a") as f: f.write("AI ANALYSIS FUNCTION CALLED\n"); f.flush(); print("DEBUGGING: AI ANALYSIS FUNCTION CALLED!!!"); print(f"🔍 AI Analysis Starting...")
         print(f"🔑 API Key: {OPENROUTER_API_KEY[:20]}...")
         print(f"📝 Prompt: {prompt[:100]}...")
         print(f"🖼️ Image URL length: {len(data_url)}")
@@ -550,7 +550,7 @@ async def create_inspection(
     }
     
     try:
-        print("DEBUG: INSPECTION ENDPOINT CALLED!!!"); start_time = datetime.utcnow()
+        with open("/tmp/debug.log", "a") as f: f.write("INSPECTION ENDPOINT CALLED\n"); f.flush(); print("DEBUG: INSPECTION ENDPOINT CALLED!!!"); start_time = datetime.utcnow()
         # Detect image format from base64 content and create proper data URL
         image_base64 = inspection_request.image_base64
         
