@@ -1004,7 +1004,10 @@ const App = () => {
               {/* Mode Toggle */}
               <div className="flex bg-white/10 rounded-lg p-1 mr-4">
                 <button
-                  onClick={() => setIsQuickShotMode(false)}
+                  onClick={() => {
+                    setIsQuickShotMode(false);
+                    setCurrentPage('dashboard');
+                  }}
                   className={`px-3 py-1 rounded text-sm transition-all duration-300 ${
                     !isQuickShotMode
                       ? 'bg-white/20 text-white'
@@ -1014,7 +1017,10 @@ const App = () => {
                   🔧 Technician
                 </button>
                 <button
-                  onClick={() => setIsQuickShotMode(true)}
+                  onClick={() => {
+                    setIsQuickShotMode(true);
+                    setCurrentPage('dashboard');
+                  }}
                   className={`px-3 py-1 rounded text-sm transition-all duration-300 ${
                     isQuickShotMode
                       ? 'bg-white/20 text-white'
@@ -1111,6 +1117,7 @@ const App = () => {
                 <button
                   onClick={() => {
                     setIsQuickShotMode(false);
+                    setCurrentPage('dashboard');
                     setIsMobileMenuOpen(false);
                   }}
                   className={`flex-1 px-3 py-2 rounded text-sm transition-all duration-300 ${
@@ -1124,6 +1131,7 @@ const App = () => {
                 <button
                   onClick={() => {
                     setIsQuickShotMode(true);
+                    setCurrentPage('dashboard');
                     setIsMobileMenuOpen(false);
                   }}
                   className={`flex-1 px-3 py-2 rounded text-sm transition-all duration-300 ${
@@ -1197,7 +1205,10 @@ const App = () => {
           <div className="container mx-auto px-4 py-3">
             <div className="flex bg-white/10 rounded-lg p-1">
               <button
-                onClick={() => setIsQuickShotMode(false)}
+                onClick={() => {
+                  setIsQuickShotMode(false);
+                  setCurrentPage('dashboard');
+                }}
                 className={`flex-1 px-3 py-2 rounded text-sm transition-all duration-300 ${
                   !isQuickShotMode
                     ? 'bg-white/20 text-white'
@@ -1207,7 +1218,10 @@ const App = () => {
                 🔧 Technician
               </button>
               <button
-                onClick={() => setIsQuickShotMode(true)}
+                onClick={() => {
+                  setIsQuickShotMode(true);
+                  setCurrentPage('dashboard');
+                }}
                 className={`flex-1 px-3 py-2 rounded text-sm transition-all duration-300 ${
                   isQuickShotMode
                     ? 'bg-white/20 text-white'
@@ -1809,6 +1823,25 @@ const App = () => {
                           <div className="text-sm">{inspectionResult.analysis.maintenance_notes}</div>
                         </div>
                       )}
+
+                      {/* GPS Location Section */}
+                      {gpsData && (
+                        <div className="border-t border-white/20 pt-3">
+                          <h4 className="text-sm font-semibold text-white/90 mb-2">📍 GPS Location</h4>
+                          <div className="text-sm">
+                            <a 
+                              href={`https://maps.google.com/maps?q=${gpsData.latitude},${gpsData.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                              title="Open in Google Maps"
+                            >
+                              {gpsData.latitude.toFixed(6)}, {gpsData.longitude.toFixed(6)}
+                            </a>
+                            <span className="text-white/60 ml-2">(±{Math.round(gpsData.accuracy)}m)</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <pre className="whitespace-pre-wrap text-sm">{inspectionResult.analysis}</pre>
@@ -2082,7 +2115,7 @@ const App = () => {
                           <img 
                             src={`data:image/jpeg;base64,${inspection.image_base64}`}
                             alt="Inspection"
-                            className="w-full h-48 object-cover rounded-lg border border-white/20 cursor-pointer hover:opacity-80 transition-opacity duration-300"
+                            className="w-32 h-32 object-contain rounded-lg border border-white/20 cursor-pointer hover:opacity-80 transition-opacity duration-300"
                             onClick={() => setModalImage(`data:image/jpeg;base64,${inspection.image_base64}`)}
                             title="Click to view full size"
                           />
@@ -2337,7 +2370,15 @@ const App = () => {
                                       return (
                                         <div className="text-xs">
                                           <div className="text-green-400">📍 GPS</div>
-                                          <div className="text-white/60">{gps.latitude.toFixed(4)}, {gps.longitude.toFixed(4)}</div>
+                                          <a 
+                                            href={`https://maps.google.com/maps?q=${gps.latitude},${gps.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
+                                            title="Open in Google Maps"
+                                          >
+                                            {gps.latitude.toFixed(4)}, {gps.longitude.toFixed(4)}
+                                          </a>
                                         </div>
                                       );
                                     }
