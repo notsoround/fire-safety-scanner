@@ -43,6 +43,8 @@ const App = () => {
   const [isCapturingGPS, setIsCapturingGPS] = useState(false);
   const [gpsError, setGpsError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [progressText, setProgressText] = useState('');
   
   // Google Maps Business Suggestions
   const [businessSuggestions, setBusinessSuggestions] = useState([]);
@@ -644,6 +646,28 @@ const App = () => {
     }
 
     setIsSubmitting(true);
+    setAnalysisProgress(0);
+    setProgressText('Preparing analysis...');
+
+    // Start progress animation
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += Math.random() * 12; // Random progress increments
+      if (progress > 85) progress = 85; // Cap at 85% until complete
+      
+      setAnalysisProgress(progress);
+      
+      // Dynamic progress text based on completion percentage
+      if (progress < 25) {
+        setProgressText('🔄 Uploading image...');
+      } else if (progress < 50) {
+        setProgressText('🤖 Processing with AI model...');
+      } else if (progress < 75) {
+        setProgressText('🔍 Analyzing fire extinguisher tag...');
+      } else {
+        setProgressText('📊 Finalizing results...');
+      }
+    }, 600); // Update every 600ms
 
     try {
       const sessionToken = localStorage.getItem('session_token');
@@ -734,9 +758,21 @@ const App = () => {
       if (response.ok) {
         const result = await response.json();
         // Treat success flag if present, but still handle without it
+        // Complete the progress bar
+        clearInterval(progressInterval);
+        setAnalysisProgress(100);
+        setProgressText('✅ Complete!');
+
         if (result && result.success) {
           console.log(`Analysis succeeded in ${result.duration_ms} ms using ${result.model}`);
         }
+        
+        // Show completion for a moment, then hide progress
+        setTimeout(() => {
+          setAnalysisProgress(0);
+          setProgressText('');
+        }, 1500);
+        
         setInspectionResult(result);
         setSelectedImage(null);
         setLocation('');
@@ -781,6 +817,10 @@ const App = () => {
         }
         await loadInspections();
         await loadDueInspections();
+        // Clear progress on timeout
+        clearInterval(progressInterval);
+        setAnalysisProgress(0);
+        setProgressText('');
         alert('The analysis took longer than expected. We could not auto-retrieve the result, but it may have been saved. Please check the Validate or Data tabs.');
       } else {
         let message = 'Analysis failed';
@@ -790,10 +830,19 @@ const App = () => {
         } catch (_) {
           // Response was likely HTML (nginx error page). Keep default message.
         }
+        // Clear progress on error
+        clearInterval(progressInterval);
+        setAnalysisProgress(0);
+        setProgressText('');
         alert(message);
       }
     } catch (error) {
       console.error('Analysis failed:', error);
+      
+      // Clear progress on network error
+      clearInterval(progressInterval);
+      setAnalysisProgress(0);
+      setProgressText('');
       
       // Save to offline queue if network request failed
       const submissionData = {
@@ -1760,6 +1809,21 @@ const App = () => {
                   >
                     {isAnalyzing ? '🔍 Analyzing...' : '🔍 Analyze and Submit'}
                   </button>
+
+                  {/* Cool Progress Bar */}
+                  {(isAnalyzing || analysisProgress > 0) && (
+                    <div className="mt-4 bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
+                      <div className="w-full h-4 bg-black/30 rounded-full overflow-hidden mb-3">
+                        <div 
+                          className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300 ease-out"
+                          style={{ width: `${analysisProgress}%` }}
+                        />
+                      </div>
+                      <p className="text-white text-sm text-center font-medium">
+                        {progressText}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
