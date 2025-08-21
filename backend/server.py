@@ -1026,20 +1026,28 @@ async def get_pye_barker_locations(lat: float, lng: float, radius: int = 50000):
                 "success": True,
                 "locations": [
                     {
-                        "name": "Pye Barker Fire & Safety - Downtown",
-                        "address": "123 Fire Safety Blvd, Downtown",
-                        "phone": "(555) 123-4567",
+                        "name": "Pye Barker Fire & Safety - Salt Lake City",
+                        "address": "4687 South 900 West, Salt Lake City, UT 84123",
+                        "phone": "(801) 590-9700",
                         "distance": "2.1 miles",
                         "place_id": "mock_pye_barker_1",
                         "rating": 4.8
                     },
                     {
-                        "name": "Pye Barker Fire & Safety - Industrial",
-                        "address": "456 Safety Industrial Way, Industrial District",
-                        "phone": "(555) 987-6543", 
+                        "name": "Pye Barker Fire & Safety - West Valley",
+                        "address": "3456 West 3500 South, West Valley City, UT 84119",
+                        "phone": "(801) 555-0123", 
                         "distance": "5.3 miles",
                         "place_id": "mock_pye_barker_2",
                         "rating": 4.7
+                    },
+                    {
+                        "name": "Pye Barker Fire & Safety - Murray",
+                        "address": "5678 State Street, Murray, UT 84107",
+                        "phone": "(801) 555-0456",
+                        "distance": "7.8 miles", 
+                        "place_id": "mock_pye_barker_3",
+                        "rating": 4.6
                     }
                 ]
             }

@@ -25,7 +25,7 @@ const App = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  
+
   // Quick Shot Mode State
   const [isQuickShotMode, setIsQuickShotMode] = useState(false);
   const [submittedBy, setSubmittedBy] = useState('');
@@ -785,7 +785,7 @@ const App = () => {
       } else {
         let message = 'Analysis failed';
         try {
-          const error = await response.json();
+        const error = await response.json();
           message = error.detail || message;
         } catch (_) {
           // Response was likely HTML (nginx error page). Keep default message.
@@ -962,7 +962,7 @@ const App = () => {
           }}
         />
         <div className="relative z-20 min-h-screen flex items-center justify-center">
-          <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">Loading...</div>
         </div>
       </div>
     );
@@ -990,7 +990,7 @@ const App = () => {
           }}
         />
         <div className="relative z-20 min-h-screen flex items-center justify-center">
-          <div className="text-white text-xl">Loading Fire Safety Scanner...</div>
+        <div className="text-white text-xl">Loading Fire Safety Scanner...</div>
         </div>
       </div>
     );
@@ -1096,7 +1096,7 @@ const App = () => {
                       className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded hover:bg-red-500/30 transition-colors"
                     >
                       Logout
-                    </button>
+                </button>
                   </div>
                 ) : (
                   <button
@@ -1277,9 +1277,9 @@ const App = () => {
                     <div>
                       <h2 className="text-2xl font-bold text-white">Quick Shot Mode</h2>
                       <p className="text-white/70">Snap → Name → Submit → Go!</p>
-                    </div>
-                  </div>
-                </div>
+              </div>
+              </div>
+            </div>
 
                 {/* Quick Shot Form */}
                 <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
@@ -1350,11 +1350,11 @@ const App = () => {
                                   >
                                     ✏️ Or type custom business name
                                   </button>
-                                </div>
+                </div>
                               </>
                             )}
-                          </div>
-                        )}
+              </div>
+            )}
                       </div>
                       
                       {gpsData && businessSuggestions.length === 0 && !isLoadingSuggestions && (
@@ -1477,8 +1477,8 @@ const App = () => {
             ) : (
               /* Technician Mode Interface */
               <div className="space-y-8">
-                {/* Image Upload Section */}
-                <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            {/* Image Upload Section */}
+            <div className="bg-white/8 backdrop-blur-md rounded-xl p-6 border border-white/20">
               <h2 className="text-2xl font-bold text-white mb-6">Upload Fire Extinguisher Tag</h2>
               
               <div className="space-y-4">
@@ -1775,11 +1775,11 @@ const App = () => {
                       <div className="border-b border-white/20 pb-3">
                         <h4 className="text-sm font-semibold text-white/90 mb-2">📋 Inspection Details</h4>
                         <div className="space-y-1 text-sm">
-                          {inspectionResult.analysis.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(inspectionResult.analysis.last_inspection_date)}</div>}
-                          {inspectionResult.analysis.next_due_date && <div><strong>Next Due:</strong> {formatDate(inspectionResult.analysis.next_due_date)}</div>}
-                          {inspectionResult.analysis.condition && <div><strong>Condition:</strong> {inspectionResult.analysis.condition}</div>}
-                          {inspectionResult.analysis.requires_attention !== undefined && (
-                            <div><strong>Requires Attention:</strong> {inspectionResult.analysis.requires_attention ? 'Yes' : 'No'}</div>
+                      {inspectionResult.analysis.last_inspection_date && <div><strong>Last Inspection:</strong> {formatDate(inspectionResult.analysis.last_inspection_date)}</div>}
+                      {inspectionResult.analysis.next_due_date && <div><strong>Next Due:</strong> {formatDate(inspectionResult.analysis.next_due_date)}</div>}
+                      {inspectionResult.analysis.condition && <div><strong>Condition:</strong> {inspectionResult.analysis.condition}</div>}
+                      {inspectionResult.analysis.requires_attention !== undefined && (
+                        <div><strong>Requires Attention:</strong> {inspectionResult.analysis.requires_attention ? 'Yes' : 'No'}</div>
                           )}
                         </div>
                       </div>
@@ -1901,11 +1901,11 @@ const App = () => {
                     {inspectionResult.message}
                   </div>
                 )}
+                  </div>
+                )}
               </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         )}
 
         {currentPage === 'inspections' && (
@@ -2202,8 +2202,8 @@ const App = () => {
                                           <div className="text-xs font-semibold text-white/90 mb-1">📋 INSPECTION</div>
                                           {parsed.last_inspection_date && <div><strong>Last:</strong> {formatDate(parsed.last_inspection_date)}</div>}
                                           {parsed.next_due_date && <div><strong>Due:</strong> {formatDate(parsed.next_due_date)}</div>}
-                                          {parsed.condition && <div><strong>Condition:</strong> {parsed.condition}</div>}
-                                          {parsed.requires_attention !== undefined && (
+                                      {parsed.condition && <div><strong>Condition:</strong> {parsed.condition}</div>}
+                                      {parsed.requires_attention !== undefined && (
                                               <div><strong>Attention:</strong> {parsed.requires_attention ? 'Yes' : 'No'}</div>
                                           )}
                                       </div>
@@ -2449,6 +2449,19 @@ const App = () => {
                                 className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded hover:bg-blue-500/30 transition-colors duration-300 mr-2"
                               >
                                 👁️ View
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setCurrentPage('validate');
+                                  // Find and start editing this inspection
+                                  const targetInspection = inspections.find(insp => insp.id === inspection.id);
+                                  if (targetInspection) {
+                                    startEditingInspection(targetInspection);
+                                  }
+                                }}
+                                className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded hover:bg-green-500/30 transition-colors duration-300 mr-2"
+                              >
+                                ✏️ Edit
                               </button>
                               <button
                                 onClick={() => deleteInspection(inspection.id)}
