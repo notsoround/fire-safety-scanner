@@ -48,6 +48,7 @@ const App = () => {
   const [businessSuggestions, setBusinessSuggestions] = useState([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [pyeBarkerLocations, setPyeBarkerLocations] = useState([]);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
@@ -431,6 +432,30 @@ const App = () => {
     }
   };
 
+  // Fetch Pye Barker Locations
+  const fetchPyeBarkerLocations = async (latitude, longitude) => {
+    try {
+      const response = await fetch(`${backendUrl}/api/places/pye-barker?lat=${latitude}&lng=${longitude}&radius=50000`, {
+        method: 'GET',
+        headers: {
+          'session-token': localStorage.getItem('session_token')
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPyeBarkerLocations(data.locations || []);
+        console.log('✅ Fetched Pye Barker locations:', data.locations?.length || 0);
+      } else {
+        console.warn('Could not fetch Pye Barker locations');
+        setPyeBarkerLocations([]);
+      }
+    } catch (error) {
+      console.warn('Pye Barker location fetch failed:', error);
+      setPyeBarkerLocations([]);
+    }
+  };
+
   // GPS Capture Functions
   const captureGPS = async () => {
     setIsCapturingGPS(true);
@@ -466,6 +491,9 @@ const App = () => {
       
       // Automatically fetch business suggestions when GPS is captured
       await fetchBusinessSuggestions(gps.latitude, gps.longitude);
+      
+      // Also fetch Pye Barker locations for analysis results
+      await fetchPyeBarkerLocations(gps.latitude, gps.longitude);
       
     } catch (error) {
       console.error('GPS capture failed:', error);
@@ -1839,6 +1867,27 @@ const App = () => {
                               {gpsData.latitude.toFixed(6)}, {gpsData.longitude.toFixed(6)}
                             </a>
                             <span className="text-white/60 ml-2">(±{Math.round(gpsData.accuracy)}m)</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pye Barker Locations Section */}
+                      {pyeBarkerLocations && pyeBarkerLocations.length > 0 && (
+                        <div className="border-t border-white/20 pt-3">
+                          <h4 className="text-sm font-semibold text-white/90 mb-2">🏢 Nearest Pye Barker Locations</h4>
+                          <div className="space-y-2">
+                            {pyeBarkerLocations.map((location, index) => (
+                              <div key={index} className="bg-white/5 rounded-lg p-2">
+                                <div className="text-sm font-medium text-white">{location.name}</div>
+                                <div className="text-xs text-white/70">{location.address}</div>
+                                {location.phone && location.phone !== 'Phone not available' && (
+                                  <div className="text-xs text-blue-400">📞 {location.phone}</div>
+                                )}
+                                {location.rating > 0 && (
+                                  <div className="text-xs text-yellow-400">⭐ {location.rating}/5</div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
