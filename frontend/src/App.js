@@ -45,6 +45,7 @@ const App = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
+  const [progressInterval, setProgressInterval] = useState(null);
   
   // Google Maps Business Suggestions
   const [businessSuggestions, setBusinessSuggestions] = useState([]);
@@ -651,7 +652,7 @@ const App = () => {
 
     // Start progress animation
     let progress = 0;
-    const progressInterval = setInterval(() => {
+    const interval = setInterval(() => {
       progress += Math.random() * 12; // Random progress increments
       if (progress > 85) progress = 85; // Cap at 85% until complete
       
@@ -668,6 +669,8 @@ const App = () => {
         setProgressText('📊 Finalizing results...');
       }
     }, 600); // Update every 600ms
+    
+    setProgressInterval(interval);
 
     try {
       const sessionToken = localStorage.getItem('session_token');
@@ -759,7 +762,10 @@ const App = () => {
         const result = await response.json();
         // Treat success flag if present, but still handle without it
         // Complete the progress bar
-        clearInterval(progressInterval);
+        if (progressInterval) {
+          clearInterval(progressInterval);
+          setProgressInterval(null);
+        }
         setAnalysisProgress(100);
         setProgressText('✅ Complete!');
 
@@ -818,7 +824,10 @@ const App = () => {
         await loadInspections();
         await loadDueInspections();
         // Clear progress on timeout
-        clearInterval(progressInterval);
+        if (progressInterval) {
+          clearInterval(progressInterval);
+          setProgressInterval(null);
+        }
         setAnalysisProgress(0);
         setProgressText('');
         alert('The analysis took longer than expected. We could not auto-retrieve the result, but it may have been saved. Please check the Validate or Data tabs.');
@@ -831,7 +840,10 @@ const App = () => {
           // Response was likely HTML (nginx error page). Keep default message.
         }
         // Clear progress on error
-        clearInterval(progressInterval);
+        if (progressInterval) {
+          clearInterval(progressInterval);
+          setProgressInterval(null);
+        }
         setAnalysisProgress(0);
         setProgressText('');
         alert(message);
@@ -840,7 +852,10 @@ const App = () => {
       console.error('Analysis failed:', error);
       
       // Clear progress on network error
-      clearInterval(progressInterval);
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        setProgressInterval(null);
+      }
       setAnalysisProgress(0);
       setProgressText('');
       
