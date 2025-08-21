@@ -1090,6 +1090,61 @@ async def get_pye_barker_locations(lat: float, lng: float, radius: int = 50000):
         print(f"❌ Error in get_pye_barker_locations: {str(e)}")
         return {"success": True, "locations": []}  # Return empty instead of error
 
+@app.get("/api/debug/database-stats")
+async def get_database_stats():
+    """
+    Get database statistics to help investigate missing records.
+    """
+    try:
+        stats = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "collections": {},
+            "total_inspections": 0,
+            "oldest_inspection": None,
+            "newest_inspection": None,
+            "inspections_by_date": {}
+        }
+        
+        # Get collection stats
+        for collection_name in ["users", "sessions", "inspections"]:
+            collection = db[collection_name]
+            count = collection.count_documents({})
+            stats["collections"][collection_name] = {
+                "count": count,
+                "indexes": list(collection.list_indexes())
+            }
+        
+        # Get detailed inspection stats
+        inspections = list(inspections_collection.find({}).sort("created_at", 1))
+        stats["total_inspections"] = len(inspections)
+        
+        if inspections:
+            stats["oldest_inspection"] = {
+                "id": inspections[0].get("id"),
+                "created_at": inspections[0].get("created_at").isoformat() if inspections[0].get("created_at") else "Unknown",
+                "user_id": inspections[0].get("user_id")
+            }
+            stats["newest_inspection"] = {
+                "id": inspections[-1].get("id"),
+                "created_at": inspections[-1].get("created_at").isoformat() if inspections[-1].get("created_at") else "Unknown",
+                "user_id": inspections[-1].get("user_id")
+            }
+            
+            # Group by date
+            for inspection in inspections:
+                if inspection.get("created_at"):
+                    date_key = inspection["created_at"].strftime("%Y-%m-%d")
+                    if date_key not in stats["inspections_by_date"]:
+                        stats["inspections_by_date"][date_key] = 0
+                    stats["inspections_by_date"][date_key] += 1
+        
+        print(f"📊 Database Stats: {stats['total_inspections']} total inspections")
+        return stats
+        
+    except Exception as e:
+        print(f"❌ Error getting database stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database stats error: {str(e)}")
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
