@@ -1015,6 +1015,64 @@ async def get_nearby_places(lat: float, lng: float, radius: int = 1000):
 
 
 
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Great-circle distance between two points (km)."""
+    from math import radians, sin, cos, sqrt, asin
+    R = 6371.0
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    c = 2 * asin(sqrt(a))
+    return R * c
+
+@app.get("/api/affiliates/nearest")
+async def get_nearest_affiliate(lat: float = None, lng: float = None, limit: int = 1):
+    """
+    Returns the nearest Pye-Barker affiliate office to the provided lat/lng.
+    Uses demo data for now; ready to be swapped with DB data later.
+    """
+    try:
+        demo_offices = [
+            {
+                "name": "Pye-Barker Fire & Safety - Atlanta",
+                "address": "123 Peachtree St NE, Atlanta, GA",
+                "phone": "(404) 555-0147",
+                "lat": 33.7488,
+                "lng": -84.3885,
+                "hours": "Mon–Fri 8:00–17:00",
+            },
+            {
+                "name": "Pye-Barker Fire & Safety - Miami",
+                "address": "200 Brickell Ave, Miami, FL",
+                "phone": "(305) 555-0172",
+                "lat": 25.7617,
+                "lng": -80.1918,
+                "hours": "Mon–Fri 8:00–17:00",
+            },
+            {
+                "name": "Pye-Barker Fire & Safety - Dallas",
+                "address": "500 Main St, Dallas, TX",
+                "phone": "(214) 555-0199",
+                "lat": 32.7767,
+                "lng": -96.7970,
+                "hours": "Mon–Fri 8:00–17:00",
+            },
+        ]
+
+        offices = []
+        if lat is not None and lng is not None:
+            for o in demo_offices:
+                o_copy = dict(o)
+                o_copy["distance_km"] = round(_haversine_km(lat, lng, o["lat"], o["lng"]), 2)
+                offices.append(o_copy)
+            offices.sort(key=lambda x: x["distance_km"])  # nearest first
+        else:
+            offices = demo_offices
+
+        return {"success": True, "offices": offices[: max(1, limit)]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/debug/database-stats")
 async def get_database_stats():
     """
