@@ -435,7 +435,7 @@ const App = () => {
   // Fetch Pye Barker Locations
   const fetchPyeBarkerLocations = async (latitude, longitude) => {
     try {
-      const response = await fetch(`${backendUrl}/api/places/pye-barker?lat=${latitude}&lng=${longitude}&radius=50000`, {
+      const response = await fetch(`${backendUrl}/api/affiliates/nearest?lat=${latitude}&lng=${longitude}&limit=3`, {
         method: 'GET',
         headers: {
           'session-token': localStorage.getItem('session_token')
@@ -444,14 +444,14 @@ const App = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setPyeBarkerLocations(data.locations || []);
-        console.log('✅ Fetched Pye Barker locations:', data.locations?.length || 0);
+        setPyeBarkerLocations(data.offices || []);
+        console.log('✅ Fetched Pye Barker offices:', data.offices?.length || 0);
       } else {
-        console.warn('Could not fetch Pye Barker locations');
+        console.warn('Could not fetch Pye Barker offices');
         setPyeBarkerLocations([]);
       }
     } catch (error) {
-      console.warn('Pye Barker location fetch failed:', error);
+      console.warn('Pye Barker office fetch failed:', error);
       setPyeBarkerLocations([]);
     }
   };
@@ -1871,20 +1871,23 @@ const App = () => {
                         </div>
                       )}
 
-                      {/* Pye Barker Locations Section */}
+                      {/* Pye Barker Offices Section */}
                       {pyeBarkerLocations && pyeBarkerLocations.length > 0 && (
                         <div className="border-t border-white/20 pt-3">
-                          <h4 className="text-sm font-semibold text-white/90 mb-2">🏢 Nearest Pye Barker Locations</h4>
+                          <h4 className="text-sm font-semibold text-white/90 mb-2">🏢 Nearest Pye Barker Offices</h4>
                           <div className="space-y-2">
-                            {pyeBarkerLocations.map((location, index) => (
+                            {pyeBarkerLocations.map((office, index) => (
                               <div key={index} className="bg-white/5 rounded-lg p-2">
-                                <div className="text-sm font-medium text-white">{location.name}</div>
-                                <div className="text-xs text-white/70">{location.address}</div>
-                                {location.phone && location.phone !== 'Phone not available' && (
-                                  <div className="text-xs text-blue-400">📞 {location.phone}</div>
+                                <div className="text-sm font-medium text-white">{office.name}</div>
+                                <div className="text-xs text-white/70">{office.address}</div>
+                                {office.phone && (
+                                  <div className="text-xs text-blue-400">📞 {office.phone}</div>
                                 )}
-                                {location.rating > 0 && (
-                                  <div className="text-xs text-yellow-400">⭐ {location.rating}/5</div>
+                                {office.distance_km && (
+                                  <div className="text-xs text-green-400">📍 {office.distance_km} km away</div>
+                                )}
+                                {office.hours && (
+                                  <div className="text-xs text-white/60">🕒 {office.hours}</div>
                                 )}
                               </div>
                             ))}
